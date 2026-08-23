@@ -4,7 +4,7 @@ import { isProjectStatus } from "./project-status";
 
 describe("isProjectStatus", () => {
   it("accepts a known project status", () => {
-    expect(isProjectStatus("draft")).toBe(true);
+    expect(isProjectStatus("DRAFT")).toBe(true);
   });
 
   it("rejects an unknown project status", () => {

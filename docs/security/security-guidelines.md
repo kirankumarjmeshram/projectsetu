@@ -10,6 +10,8 @@ ProjectSetu will handle confidential business documents and personally identifia
 4. Load production secrets from environment variables or a secure secret manager; rotate exposed secrets immediately.
 5. Apply least-privilege authorization to every project and document operation.
 
+The canonical domain model uses protected-reference identifiers for sensitive government and registration identifiers. Raw PAN, Aadhaar, GST, Udyam, CIN, LLPIN, bank details, and similar values must not be added to ordinary loggable domain payloads. Masked display values, if used later, must not be reversible or treated as authorization evidence.
+
 ## Future file handling
 
 Validate content using allowlisted types and content inspection rather than filename alone. Enforce file-size limits, sanitize display filenames, generate storage keys, prevent path traversal, and evaluate malware scanning. Store confidential objects privately, use short-lived signed access, and avoid public object URLs. Define retention and secure deletion policies before production.

@@ -1,3 +1,3 @@
 # Scheme domain
 
-Reserved for versioned, source-backed scheme rules. No government scheme rules are implemented.
+Versioned, source-backed scheme vocabulary and project participation contracts are implemented in this module. No government scheme rules, percentages, ceilings, or eligibility logic are implemented.

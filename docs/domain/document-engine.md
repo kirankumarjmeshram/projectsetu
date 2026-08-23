@@ -2,7 +2,7 @@
 
 ## Status
 
-Not implemented. Uploads, private storage, OCR, quotation extraction, conversion, and malware scanning are deferred.
+Provider-independent document and quotation reference contracts are implemented. Uploads, private storage, OCR, quotation extraction, conversion, and malware scanning are deferred.
 
 The future engine should separate secure ingestion, validation, storage, extraction, human review, and domain mapping. Provider adapters belong in `lib`; document concepts belong in `domain`; workflow orchestration belongs in `features`.
 
