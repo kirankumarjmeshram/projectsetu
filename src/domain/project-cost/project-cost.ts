@@ -1,7 +1,7 @@
 import type { QuotationReference } from "../documents/document-reference";
 import type { Assumption } from "../shared/assumptions";
 import type { SourceReference } from "../shared/provenance";
-import type { Identifier, MonetaryAmount } from "../shared/types";
+import type { DecimalValue, Identifier, MonetaryAmount } from "../shared/types";
 
 export const projectCostCategories = [
   "LAND",
@@ -27,7 +27,7 @@ export interface ProjectCostItem {
   readonly id: Identifier;
   readonly description: string;
   readonly category: ProjectCostCategory;
-  readonly quantity?: string;
+  readonly quantity?: DecimalValue;
   readonly unit?: string;
   readonly rate?: Assumption<MonetaryAmount>;
   readonly amount: Assumption<MonetaryAmount>;

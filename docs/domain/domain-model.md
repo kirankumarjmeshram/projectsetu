@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts listed below are implemented in `src/domain`. They establish vocabulary and boundaries only. Financial calculations, scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, and provider integrations are not implemented.
+The TypeScript contracts and Core Financial Engine Phase 1 arithmetic identities listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -13,6 +13,7 @@ The TypeScript contracts listed below are implemented in `src/domain`. They esta
 - `Assumption<T>` requires a source for traceable assumptions.
 - `SourceReference` supports official guidelines, quotations, user input, estimates, consultant assumptions, historical data, system calculations, and extensible notes without requiring a URL.
 - `ValidationIssue` reports `ERROR`, `WARNING`, or `INFO` with a stable code, message, optional path, and optional context.
+- `CalculationResult<T>` distinguishes successful typed results from lightweight structural `CalculationError` records.
 
 Financial decimal input must be a finite plain-decimal string. Native numbers, empty values, malformed text, and exponential notation are rejected rather than coerced. Negative values are valid at the primitive level because statements and adjustments may be negative; field-specific restrictions belong to future validation.
 
@@ -34,7 +35,7 @@ Sensitive and registration identifiers are represented through protected referen
 
 `ProjectCost` contains reusable `ProjectCostItem` records spanning land, development, buildings, civil works, plant, equipment, installations, furniture, vehicles, IT, pre-operative costs, working-capital margin, and extensible other costs. Items can retain quantity, unit, rate, stated amount, tax, freight, installation, supplier/quotation references, provenance, and notes.
 
-No amount, tax, freight, installation, or total is calculated. Scheme eligibility is intentionally not stored on the cost item. `CostEligibility` classifies an item for one `SchemeVersion`.
+`ProjectCostLineResult` exposes quantity/rate or stated-base calculation, additions, the final amount, and the original source-backed item. `ProjectCostSummary` contains line results, present-category totals, total project cost, stated total, and their exact difference. Scheme eligibility is intentionally not stored on the cost item; `CostEligibility` classifies an item for one `SchemeVersion`.
 
 ## Operations
 
@@ -42,13 +43,15 @@ No amount, tax, freight, installation, or total is calculated. Scheme eligibilit
 
 `ProductOrService` supports multiple outputs with independent units and year-wise selling-price, production, and sales assumptions. `OperatingInput`, `ManpowerRequirement`, and `OperatingExpense` cover production inputs, staffing, and fixed/variable costs. Known expense categories aid consistency while permitting additional category codes.
 
+Phase 1 adds `RevenueLineResult`/`RevenueSummary`, operating-input base/addition results, and yearly operating-expense summaries. Revenue uses explicit sales quantity and rate; it never infers capacity utilisation. Manpower totals remain deferred because pay-period semantics are not yet canonical.
+
 ## Working capital
 
-`WorkingCapitalAssessmentInput` distinguishes current-asset and current-liability lines and supports explicit inventory, receivable, and creditor holding periods. `WorkingCapitalAssessmentResult` can later carry totals, gap, borrower margin, and bank finance. None of those values are currently calculated.
+`WorkingCapitalAssessmentInput` distinguishes current-asset and current-liability lines and supports explicit inventory, receivable, and creditor holding periods. `WorkingCapitalSummary` exposes calculated line amounts, current-asset/liability totals, their signed gap, and optional borrower contribution/bank finance when a margin is explicitly supplied. Holding-period results retain annual amount, days, and caller-supplied day base.
 
 ## Financing and loans
 
-`MeansOfFinance` supports promoter contribution, equity, unsecured and term loans, working-capital finance, subsidy/grant, institutional finance, and other contributions. It holds stated values only; equality with project cost is a future validation.
+`MeansOfFinance` supports promoter contribution, equity, unsecured and term loans, working-capital finance, subsidy/grant, institutional finance, and other contributions. `MeansOfFinanceSummary` totals supplied sources by type, while `FinanceReconciliationResult` reports exact balance, shortfall, or excess against project cost without tolerance.
 
 `LoanTerms` models principal, source-backed interest assumptions, moratorium, period, and repayment frequency. `LoanRepaymentSchedule` represents future rows but no schedule generator exists.
 
@@ -82,4 +85,4 @@ Metric result contracts cover break-even, year-wise and average DSCR, project/eq
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate costs, operations, working capital, financing reconciliation, loan schedules, subsidy, depreciation, statements, metrics, ratios, and sensitivity. Future validations include means-of-finance mismatch, missing assumptions, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, production forecasts, loan schedules, subsidy, depreciation, statements, metrics, ratios, and sensitivity. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.

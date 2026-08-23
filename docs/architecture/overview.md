@@ -2,7 +2,7 @@
 
 ## Status
 
-The repository implements a Next.js application shell, a development landing page, quality tooling, and the canonical provider-independent TypeScript contracts described in [the domain model](../domain/domain-model.md). Product workflows, persistence, and financial calculations remain unimplemented.
+The repository implements a Next.js application shell, a development landing page, quality tooling, canonical provider-independent TypeScript contracts, and the Core Financial Engine Phase 1 arithmetic identities described in [the domain model](../domain/domain-model.md). Product workflows, persistence, and advanced financial calculations remain unimplemented.
 
 ## Dependency direction
 
