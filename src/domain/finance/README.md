@@ -1,3 +1,3 @@
 # Finance domain
 
-Planned deterministic modules include project cost, working capital, revenue, expenses, depreciation, loans, subsidy, profitability, and metrics. No financial formulas or assumptions are implemented.
+Canonical financial contracts are organized across the sibling `project-cost`, `operations`, `working-capital`, `financing`, `loan`, `subsidy`, `financials`, and `sensitivity` modules. This directory remains reserved for a future calculation engine if one cohesive finance namespace is justified. No financial formulas are implemented.

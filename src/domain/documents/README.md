@@ -1,3 +1,3 @@
 # Document domain
 
-Reserved for provider-independent document concepts. Upload, OCR, extraction, and storage are not implemented.
+Provider-independent document and quotation reference contracts are implemented in this module. Upload, OCR, extraction, binary content, and storage remain unimplemented infrastructure concerns.

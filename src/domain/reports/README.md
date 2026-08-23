@@ -1,3 +1,3 @@
 # Report domain
 
-Reserved for report composition concepts. PDF, DOCX, spreadsheet, and AI report generation are not implemented.
+Report-type, section-selection, and generated-artifact reference contracts are implemented in this module. PDF, DOCX, spreadsheet, and AI report generation remain unimplemented.
