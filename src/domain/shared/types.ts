@@ -1,15 +1,24 @@
-/**
- * The arithmetic representation for money is unresolved by ADR 0001.
- * This lossless decimal-text alias is a temporary contract boundary only;
- * domain code must not perform arithmetic on it.
- */
-export type MonetaryAmount = string;
+declare const decimalValueBrand: unique symbol;
+declare const monetaryAmountBrand: unique symbol;
+declare const percentageBrand: unique symbol;
+
+/** Canonical, unformatted, plain-decimal text created by the decimal constructor. */
+export type DecimalValue = string & {
+  readonly [decimalValueBrand]: "DecimalValue";
+};
+
+/** Currency-neutral monetary decimal text created by the money constructor. */
+export type MonetaryAmount = DecimalValue & {
+  readonly [monetaryAmountBrand]: "MonetaryAmount";
+};
 
 /**
- * Percentages remain explicit decimal text until the decimal strategy and
- * rounding policies are decided. No implicit 0-1 or 0-100 scale is assumed.
+ * A percentage expressed in percent points and created by the percentage constructor.
+ * For example, 10% is represented by the canonical value "10".
  */
-export type Percentage = string;
+export type Percentage = DecimalValue & {
+  readonly [percentageBrand]: "Percentage";
+};
 
 export type Identifier = string;
 export type ISODate = string;

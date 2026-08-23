@@ -4,7 +4,7 @@ ProjectSetu is an early-stage application for creating bankable project reports,
 
 ## Architecture and stack
 
-The Next.js App Router composes pages in `src/app`; feature orchestration lives in `src/features`; deterministic business concepts belong in `src/domain`; reusable UI belongs in `src/components`; and infrastructure adapters belong in `src/lib`. The stack is Next.js, React, TypeScript, Tailwind CSS, ESLint, Prettier, Vitest, and a PostgreSQL-ready (but provider-neutral) architecture.
+The Next.js App Router composes pages in `src/app`; feature orchestration lives in `src/features`; deterministic business concepts belong in `src/domain`; reusable UI belongs in `src/components`; and infrastructure adapters belong in `src/lib`. The stack is Next.js, React, TypeScript, Tailwind CSS, Decimal.js, ESLint, Prettier, Vitest, and a PostgreSQL-ready (but provider-neutral) architecture.
 
 ## Local development
 
