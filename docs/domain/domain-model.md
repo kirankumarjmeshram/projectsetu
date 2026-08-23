@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts and Core Financial Engine Phase 1 arithmetic identities listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
+The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, and deterministic term-loan repayment engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -53,7 +53,13 @@ Phase 1 adds `RevenueLineResult`/`RevenueSummary`, operating-input base/addition
 
 `MeansOfFinance` supports promoter contribution, equity, unsecured and term loans, working-capital finance, subsidy/grant, institutional finance, and other contributions. `MeansOfFinanceSummary` totals supplied sources by type, while `FinanceReconciliationResult` reports exact balance, shortfall, or excess against project cost without tolerance.
 
-`LoanTerms` models principal, source-backed interest assumptions, moratorium, period, and repayment frequency. `LoanRepaymentSchedule` represents future rows but no schedule generator exists.
+`LoanTerms` is configured input. It holds source-backed original principal and annual percentage rate, total schedule periods, explicit `MONTHLY`, `QUARTERLY`, `HALF_YEARLY`, or `YEARLY` frequency, and `EQUAL_PRINCIPAL` or `EMI` repayment method. Total schedule periods include moratorium periods; moratorium duration is therefore an unambiguous whole count at the configured frequency rather than a month value that is silently converted.
+
+`LoanMoratorium` requires an explicit type, period count, and interest treatment. Supported combinations are `PRINCIPAL_ONLY`/`PAY_CURRENT`, `FULL_PAYMENT`/`ACCRUE`, and `FULL_PAYMENT`/`CAPITALIZE`. Separate accrual does not increase principal and remains identifiable as unpaid accrued interest. Capitalization increases principal and consequently the base for later interest. Unsupported combinations are typed failures, not inferred bank rules.
+
+`LoanRepaymentPeriod` is calculated output. It exposes sequence, projection year, phase, opening/closing principal, the periodic decimal rate, interest charged, principal repayment, interest payment, total payment, capitalized interest, and opening/added/closing accrued interest. `LoanRepaymentSummary` distinguishes original principal, total principal repaid, interest charged/paid, total repayments, capitalized interest, ending balances, and schedule/amortization period counts. `AnnualLoanRepaymentSummary` derives from canonical periods and exposes opening/closing principal, principal repaid, interest charged/paid, total debt service, and accrued-interest balances without recalculating the loan.
+
+Positive principal requires at least one post-moratorium amortization period. Zero principal intentionally produces a valid empty schedule with zero totals. Schedule interest is period-based nominal reducing-balance interest; dates, day counts, partial periods, changing rates, prepayments, rounded contractual instalments, and accrued-interest payoff rules are deferred.
 
 ## Subsidy and schemes
 
@@ -85,4 +91,4 @@ Metric result contracts cover break-even, year-wise and average DSCR, project/eq
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, production forecasts, loan schedules, subsidy, depreciation, statements, metrics, ratios, and sensitivity. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, production forecasts, irregular or changing-rate loan behavior, subsidy, depreciation, statements, metrics, ratios, and sensitivity. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.

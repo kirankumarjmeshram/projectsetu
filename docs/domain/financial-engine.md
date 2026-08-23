@@ -2,7 +2,7 @@
 
 ## Status
 
-The decimal-safe arithmetic foundation and Core Financial Engine Phase 1 are implemented. Phase 1 covers project cost, revenue, operating inputs/expenses, escalation, means of finance, reconciliation, and core working capital. No rates or business defaults are embedded.
+The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, and the reusable term-loan repayment engine are implemented. Phase 1 covers project cost, revenue, operating inputs/expenses, escalation, means of finance, reconciliation, and core working capital. The loan engine covers nominal period-rate conversion, reducing-balance interest, equal-principal and EMI schedules, explicit moratorium treatments, summaries, and projection-year aggregation. No rates or business defaults are embedded.
 
 All financial calculations must be deterministic domain logic. AI may later explain or narrate validated results, but it must never be the source of truth for project cost, promoter contribution, subsidy, bank finance, interest, depreciation, profitability, DSCR, IRR, NPV, break-even, or loan repayment.
 
@@ -21,7 +21,7 @@ Authoritative financial calculations must use the configured `decimal.js` primit
 - Project cost items and stated project-cost totals
 - Operational capacity, products/services, inputs, manpower, and expenses
 - Working-capital inputs and result shape
-- Means of finance and loan terms/schedule rows
+- Means of finance plus configured loan terms, calculated repayment periods, loan summaries, and annual repayment summaries
 - Traceable financial assumptions and asset-wise depreciation assumptions
 - Projected profit-and-loss, cash-flow, and balance-sheet result shapes
 - Break-even, DSCR, IRR, NPV, ROI, payback, and ratio result shapes
@@ -61,6 +61,25 @@ This demonstrates decimal primitives only; it is not a ProjectSetu financial for
 Do not round every intermediate result to two decimal places. Calculate at sufficient precision, then round at an explicit domain, statutory, persistence, or reporting boundary using a specified decimal-place count and mode. Scheme-specific and tax-specific rounding remains source-driven future work.
 
 Display formatting is independent. Canonical domain values never contain the INR symbol, commas, Indian digit grouping, or forced trailing zeroes. Whole-rupee and decimal display choices belong to UI/report formatting.
+
+## Implemented Formula Registry
+
+`Implemented` means domain code and focused unit tests exist. Arithmetic identities need no external authority; standard financial mathematics and ProjectSetu domain conventions are identified explicitly rather than attributed to a bank or government scheme.
+
+| Formula/function                                                                                        | Module                                       | Status      | Classification                                                   | Source/basis                                                                           | Test file                                         |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ----------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `calculateProjectCostLine`, `calculateProjectCost`                                                      | `src/domain/project-cost/calculations.ts`    | Implemented | Arithmetic identity and documented fallback convention           | Explicit quantity/rate, stated amounts, and exact sums                                 | `src/domain/project-cost/calculations.test.ts`    |
+| `calculateRevenueLine`, `calculateRevenueSummary`                                                       | `src/domain/operations/calculations.ts`      | Implemented | Arithmetic identity                                              | Explicit sales quantity multiplied by selling rate                                     | `src/domain/operations/calculations.test.ts`      |
+| `escalateDecimalValue`                                                                                  | `src/domain/shared/calculation.ts`           | Implemented | Arithmetic identity                                              | Explicit compound-growth formula                                                       | `src/domain/shared/calculation.test.ts`           |
+| `calculateOperatingInputLine`, `calculateOperatingInputCostSummary`, `calculateOperatingExpenseSummary` | `src/domain/operations/calculations.ts`      | Implemented | Arithmetic identity and documented addition convention           | Explicit quantities, rates, additions, and exact sums                                  | `src/domain/operations/calculations.test.ts`      |
+| `calculateMeansOfFinance`, `reconcileMeansOfFinance`                                                    | `src/domain/financing/calculations.ts`       | Implemented | Arithmetic identity                                              | Exact source sums and finance-minus-cost comparison                                    | `src/domain/financing/calculations.test.ts`       |
+| `calculateHoldingPeriodRequirement`, `calculateWorkingCapitalLine`, `calculateWorkingCapital`           | `src/domain/working-capital/calculations.ts` | Implemented | Arithmetic identity and domain convention                        | Caller-supplied annual bases, holding periods, day base, and margin                    | `src/domain/working-capital/calculations.test.ts` |
+| `calculatePeriodicInterestRate`                                                                         | `src/domain/loan/calculations.ts`            | Implemented | Domain convention                                                | Nominal annual percent factor divided by explicit periods per year                     | `src/domain/loan/calculations.test.ts`            |
+| `calculatePeriodInterest`                                                                               | `src/domain/loan/calculations.ts`            | Implemented | Standard financial mathematics                                   | Reducing-balance interest on opening principal                                         | `src/domain/loan/calculations.test.ts`            |
+| `calculateEqualPrincipalAmount`                                                                         | `src/domain/loan/calculations.ts`            | Implemented | Standard financial mathematics                                   | Repayable principal divided by amortization periods                                    | `src/domain/loan/calculations.test.ts`            |
+| `calculateEmiPayment`                                                                                   | `src/domain/loan/calculations.ts`            | Implemented | Standard financial mathematics                                   | Standard amortising-loan payment relationship, including zero-rate branch              | `src/domain/loan/calculations.test.ts`            |
+| `generateLoanRepaymentSchedule`                                                                         | `src/domain/loan/calculations.ts`            | Implemented | Standard financial mathematics and documented domain conventions | Reducing-balance schedule, explicit moratorium policy, and final-period reconciliation | `src/domain/loan/calculations.test.ts`            |
+| `summarizeLoanScheduleByYear`                                                                           | `src/domain/loan/calculations.ts`            | Implemented | Aggregation identity and projection-year convention              | Canonical repayment periods grouped by frequency count                                 | `src/domain/loan/calculations.test.ts`            |
 
 ## Phase 1 formula reference
 
@@ -165,10 +184,84 @@ All Phase 1 calculations are pure, retain their source input in line results, an
 - **Limitations:** no MPBF, Tandon Committee norm, minimum margin, residual floor, or bank policy.
 - **Classification:** arithmetic identities after explicit inputs; direct-amount fallback is a domain convention.
 
+## Loan formula reference
+
+Loan inputs and outputs remain currency-neutral canonical decimal strings. All authoritative money, rate, interest, power, payment, balance, and aggregation operations use `ProjectSetuDecimal`. Native numbers are used only for validated integer period counts, loop indices, and projection-year grouping.
+
+### Nominal periodic interest rate
+
+- **Purpose:** convert the configured annual percentage into the decimal factor used for each schedule period.
+- **Inputs:** an explicit annual `Percentage` and one of `MONTHLY`, `QUARTERLY`, `HALF_YEARLY`, or `YEARLY`.
+- **Formula/algorithm:** `periodic rate = (annual percent / 100) / periods per year`, where periods per year are respectively 12, 4, 2, and 1.
+- **Result:** `DecimalValue`; for example, 12% monthly produces `"0.01"`.
+- **Rounding:** no currency or display rounding; division uses the accepted 40-significant-digit decimal context.
+- **Assumptions:** the annual input is a nominal annual rate allocated evenly across scheduled periods. Frequency is never inferred.
+- **Limitations:** this is not an effective-annual-rate conversion and does not model dates, partial periods, daily accrual, or a 360/365/actual day count.
+
+### Reducing-balance period interest
+
+- **Purpose:** calculate transparent interest for one canonical repayment period.
+- **Inputs:** the period's opening outstanding principal and its periodic decimal rate.
+- **Formula/algorithm:** `interest charged = opening principal × periodic rate`.
+- **Result:** exact `MonetaryAmount` interest charged, retained separately from principal repayment and interest payment.
+- **Rounding:** no per-period currency rounding.
+- **Assumptions:** scheduled period-based accrual only; after principal is repaid, later interest uses the reduced opening principal.
+- **Limitations:** no fees, penalty interest, date-based accrual, irregular drawdowns, or lender-specific conventions.
+
+### Equal-principal repayment
+
+- **Purpose:** amortise principal in equal scheduled components while allowing interest and total payment to decline.
+- **Inputs:** principal outstanding after any moratorium and the number of remaining amortization periods.
+- **Formula/algorithm:** `scheduled principal = repayable principal / amortization periods`; each period pays current reducing-balance interest in addition. The final period repays its exact opening principal.
+- **Result:** canonical schedule periods showing opening principal, interest, principal repayment, total payment, and closing principal.
+- **Rounding:** intermediate amounts are not rounded to rupees or paise. The final-period principal is reconciled to the exact opening principal, so closing principal is exactly zero.
+- **Assumptions:** principal repayment begins only after moratorium and is recalculated from post-moratorium principal when interest was capitalized.
+- **Limitations:** no balloon, bullet, stepped, irregular, or rounded contractual instalments.
+
+### EMI / equal-total-instalment repayment
+
+- **Purpose:** calculate and apply a level total instalment to an amortising reducing-balance loan.
+- **Inputs:** principal outstanding after moratorium (`P`), periodic decimal rate (`r`), and remaining amortization periods (`n`).
+- **Formula/algorithm:** when `r > 0`, `payment = P × r × (1 + r)^n / ((1 + r)^n − 1)`. `decimal.js` performs the power and all arithmetic. For each period, `principal component = payment − interest charged`.
+- **Result:** schedule periods with transparent interest and principal components. For zero interest, `payment = P / n`.
+- **Rounding:** no practical-currency rounding is imposed. The final period repays its exact opening principal and recomputes total payment as principal plus current interest, deterministically absorbing the decimal-context residual.
+- **Assumptions:** constant nominal periodic rate, regular equal-length indexed periods, and payment at each period boundary.
+- **Limitations:** no changing/floating rates, advance EMI, fees, dates, prepayment, arrears, or lender-specific instalment rounding.
+
+### Moratorium behavior
+
+- **Purpose:** make payment deferral and interest treatment explicit instead of treating every moratorium alike.
+- **Inputs:** `type`, whole schedule `periods`, and `interestTreatment`. Supported combinations are `PRINCIPAL_ONLY` with `PAY_CURRENT`, and `FULL_PAYMENT` with either `ACCRUE` or `CAPITALIZE`.
+- **Formula/algorithm:** principal-only periods charge and pay current interest but repay no principal. Full-payment/accrual periods make no payment and add charged interest to a separate accrued-interest balance. Full-payment/capitalization periods make no payment and add charged interest to outstanding principal, so later interest is charged on the increased principal.
+- **Result:** every period separately reports charged interest, paid interest, capitalized interest, opening/added/closing accrued interest, principal movement, and payment.
+- **Rounding:** no moratorium-specific rounding.
+- **Assumptions:** moratorium duration is a whole count at the configured schedule frequency. Accrued-but-not-capitalized interest remains separate and unpaid through this schedule because no payoff rule was configured.
+- **Limitations:** unsupported type/treatment combinations fail. Partial periods, automatic month-to-quarter conversion, interest-on-accrued-interest, and inferred accrued-interest payoff are not implemented.
+
+### Schedule validation, closure, and totals
+
+- **Purpose:** produce a structurally valid, immutable amortization schedule and transparent totals.
+- **Inputs:** `LoanTerms`, including principal, annual rate, total schedule periods, explicit frequency, repayment method, and optional moratorium.
+- **Formula/algorithm:** moratorium periods occupy the beginning of the configured total schedule; remaining periods amortise principal. Summary principal repayment uses the exact balance identity `original principal + capitalized interest − ending principal`. Charged interest and paid interest remain separate.
+- **Result:** `LoanRepaymentSchedule` containing canonical periods, `LoanRepaymentSummary`, and annual summaries.
+- **Rounding:** no global or per-row currency rounding. Final-period reconciliation sets a completed amortising schedule's closing principal to canonical zero.
+- **Assumptions:** positive principal requires a positive total period count and at least one post-moratorium amortization period. Zero principal returns a valid empty schedule with zero totals.
+- **Limitations:** negative principal/rates, invalid counts, moratorium beyond the schedule, and unsupported runtime method/frequency values are typed failures. No dates or payoff quotation are produced.
+
+### Annual loan aggregation
+
+- **Purpose:** expose year-wise principal, interest, and debt service for later reports and viability calculations without duplicating loan formulas.
+- **Inputs:** canonical `LoanRepaymentPeriod` rows with projection years assigned from sequence and explicit frequency (12/4/2/1 periods per year).
+- **Formula/algorithm:** group rows by projection year and aggregate principal repaid, interest charged, interest paid, and total payment; carry the first opening and last closing principal/accrued balances. The final annual bucket deterministically reconciles only decimal-context summation tails to the canonical whole-schedule totals.
+- **Result:** `AnnualLoanRepaymentSummary` rows with opening/closing principal, principal repaid, interest charged/paid, total debt service, and accrued-interest balances.
+- **Rounding:** no reporting-scale rounding; annual totals exactly reconcile to canonical schedule-summary totals within the configured decimal context.
+- **Assumptions:** projection year 1 begins at schedule period 1; no calendar start date is required.
+- **Limitations:** no fiscal-year/calendar-date mapping, partial-year allocation, DSCR, P&L, or cash-flow integration.
+
 ## Typed calculation failures
 
-`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, missing working-capital bases/day bases, invalid holding periods, and invalid escalation periods. Decimal syntax remains enforced by the canonical constructors.
+`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid loan principal/rates/periods, moratorium inconsistencies, and unsupported loan method/frequency configurations. Decimal syntax remains enforced by the canonical constructors.
 
 ## Future calculations
 
-Manpower/pay-period totals, capacity-based production forecasts, inventory flows, interest, repayment, depreciation, tax, statements, subsidy, scheme eligibility, advanced metrics, ratios, sensitivity recalculation, validation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.
+Manpower/pay-period totals, capacity-based production forecasts, inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff policies, depreciation, tax, statements, subsidy, scheme eligibility, advanced metrics, ratios, sensitivity recalculation, validation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.
