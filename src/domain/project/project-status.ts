@@ -1,7 +1,2 @@
-export const projectStatuses = ["draft"] as const;
-
-export type ProjectStatus = (typeof projectStatuses)[number];
-
-export function isProjectStatus(value: string): value is ProjectStatus {
-  return projectStatuses.some((status) => status === value);
-}
+export { isProjectStatus, projectStatuses } from "./project";
+export type { ProjectStatus } from "./project";

@@ -5,5 +5,6 @@
 - Centralize schema validation at application boundaries rather than scattering it through UI. A validation library and schemas are intentionally not selected yet.
 - Implement future calculations as pure functions where practical: typed input → domain calculation → typed result → UI, persistence, or reports.
 - Never duplicate financial formulas across consumers. Tests must use synthetic data and cover normal cases, boundaries, invalid inputs, rounding, and versioned scheme behavior.
+- Never use native JavaScript floating-point arithmetic as the authoritative implementation for monetary values, percentages, rates, ratios, or financial metrics. Construct branded values and use the configured domain decimal primitive.
 - Comment non-obvious business reasoning, sourced scheme constraints, security constraints, and unusual architecture—not code that is already self-explanatory.
 - Update relevant documentation and tests with meaningful architecture or behavior changes. Never silently change financial or scheme behavior.
