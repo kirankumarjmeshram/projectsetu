@@ -74,6 +74,14 @@ export function toDecimalValue(value: DecimalInstance): DecimalValue {
   return decimalValue(value.toFixed());
 }
 
+export function toMonetaryAmount(value: DecimalInstance): MonetaryAmount {
+  if (!value.isFinite()) {
+    throw new InvalidDecimalValueError();
+  }
+
+  return monetaryAmount(value.toFixed());
+}
+
 export function percentageToFactor(value: Percentage): DecimalInstance {
   return toDecimal(value).dividedBy("100");
 }

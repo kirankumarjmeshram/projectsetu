@@ -12,6 +12,6 @@ docs/           maintained documentation and ADRs
 resources/      sanitized reference resources and schemas
 ```
 
-Canonical domain contracts now cover shared types, projects, applicants, business entities, project cost, operations, working capital, financing, loans, subsidy, schemes, financials, sensitivity, documents, and reports. Planned feature areas remain projects, applicants, project cost, financing, schemes, financials, documents, quotations, and reports. Planned infrastructure areas are database, storage, validation, document processing, and configuration. Directories should be introduced with their first real implementation instead of being filled with placeholders.
+Canonical domain contracts cover shared types, projects, applicants, business entities, project cost, operations, working capital, financing, loans, subsidy, schemes, financials, sensitivity, documents, and reports. Cohesive `calculations.ts` modules sit beside the contracts they calculate; shared calculation outcomes and escalation remain in `domain/shared`. Planned feature and infrastructure directories should still be introduced only with real implementations.
 
 Pages must remain thin. Domain logic must not live in React components, route handlers, persistence adapters, or report generators. Prefer the `@/` TypeScript alias over deep relative imports.

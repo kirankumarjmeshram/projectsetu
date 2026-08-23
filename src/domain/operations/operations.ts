@@ -1,5 +1,6 @@
 import type { Assumption } from "../shared/assumptions";
 import type {
+  DecimalValue,
   Identifier,
   MonetaryAmount,
   Percentage,
@@ -12,7 +13,7 @@ export interface YearlyAssumption<TValue> {
 }
 
 export interface InstalledCapacity {
-  readonly quantity: string;
+  readonly quantity: DecimalValue;
   readonly unit: string;
   readonly period?: string;
 }
@@ -32,8 +33,8 @@ export interface ProductOrService {
   readonly unit: string;
   readonly installedCapacity?: InstalledCapacity;
   readonly sellingPrice: readonly YearlyAssumption<MonetaryAmount>[];
-  readonly productionQuantity?: readonly YearlyAssumption<string>[];
-  readonly salesQuantity?: readonly YearlyAssumption<string>[];
+  readonly productionQuantity?: readonly YearlyAssumption<DecimalValue>[];
+  readonly salesQuantity?: readonly YearlyAssumption<DecimalValue>[];
 }
 
 export const operatingInputCategories = [
@@ -50,7 +51,7 @@ export interface OperatingInput {
   readonly id: Identifier;
   readonly name: string;
   readonly category: OperatingInputCategory;
-  readonly quantity?: Assumption<string>;
+  readonly quantity?: Assumption<DecimalValue>;
   readonly unit: string;
   readonly purchaseRate?: Assumption<MonetaryAmount>;
   readonly supplierReferenceId?: Identifier;
