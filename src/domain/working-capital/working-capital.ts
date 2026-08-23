@@ -1,5 +1,6 @@
 import type { Assumption } from "../shared/assumptions";
 import type {
+  DecimalValue,
   Identifier,
   MonetaryAmount,
   Percentage,
@@ -25,16 +26,16 @@ export type CurrentLiabilityCategory =
   (typeof currentLiabilityCategories)[number];
 
 export interface HoldingPeriodAssumptions {
-  readonly inventoryDays?: Assumption<number>;
-  readonly receivableDays?: Assumption<number>;
-  readonly creditorDays?: Assumption<number>;
+  readonly inventoryDays?: Assumption<DecimalValue>;
+  readonly receivableDays?: Assumption<DecimalValue>;
+  readonly creditorDays?: Assumption<DecimalValue>;
 }
 
 interface WorkingCapitalLineBase {
   readonly id: Identifier;
   readonly name: string;
   readonly annualBaseAmount?: Assumption<MonetaryAmount>;
-  readonly holdingPeriodDays?: Assumption<number>;
+  readonly holdingPeriodDays?: Assumption<DecimalValue>;
 }
 
 export interface CurrentAssetLine extends WorkingCapitalLineBase {
@@ -55,14 +56,4 @@ export interface WorkingCapitalAssessmentInput {
   readonly lines: readonly WorkingCapitalLine[];
   readonly holdingPeriods?: HoldingPeriodAssumptions;
   readonly borrowerMargin?: Assumption<Percentage>;
-}
-
-export interface WorkingCapitalAssessmentResult {
-  readonly projectId: Identifier;
-  readonly projectionYear: ProjectionYear;
-  readonly totalCurrentAssets: MonetaryAmount;
-  readonly totalCurrentLiabilities: MonetaryAmount;
-  readonly workingCapitalGap: MonetaryAmount;
-  readonly borrowerMargin: MonetaryAmount;
-  readonly bankFinanceRequired: MonetaryAmount;
 }
