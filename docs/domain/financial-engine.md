@@ -2,7 +2,7 @@
 
 ## Status
 
-The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, revenue/operating-expense projection engine, and asset-wise depreciation engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. The depreciation engine adds Straight Line and Written Down Value schedules from explicit per-asset assumptions. No rates or business defaults are embedded.
+The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, and projected profit-and-loss engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. The depreciation engine adds Straight Line and Written Down Value schedules from explicit per-asset assumptions. The P&L engine composes normalized authoritative flows into EBITDA, EBIT, profit before tax, generic tax, and profit after tax. No rates or business defaults are embedded.
 
 All financial calculations must be deterministic domain logic. AI may later explain or narrate validated results, but it must never be the source of truth for project cost, promoter contribution, subsidy, bank finance, interest, depreciation, profitability, DSCR, IRR, NPV, break-even, or loan repayment.
 
@@ -24,7 +24,8 @@ Authoritative financial calculations must use the configured `decimal.js` primit
 - Means of finance plus configured loan terms, calculated repayment periods, loan summaries, and annual repayment summaries
 - Revenue and operating-expense projection assumptions, yearly overrides, calculated lines, grouped totals, and pre-depreciation/interest/tax operating surplus
 - Source-backed asset depreciation inputs, additions, per-asset schedules, and aggregate yearly summaries
-- Projected profit-and-loss, cash-flow, and balance-sheet result shapes
+- Normalized projected P&L inputs, generic tax assumptions, yearly rows, cumulative flow totals, and strict composition policy
+- Projected cash-flow and balance-sheet result shapes
 - Break-even, DSCR, IRR, NPV, ROI, payback, and ratio result shapes
 - General sensitivity scenarios and their result shape
 - Branded decimal, money, and percentage strings with strict constructors
@@ -87,6 +88,8 @@ Display formatting is independent. Canonical domain values never contain the INR
 | `calculateStraightLineAnnualDepreciation`, `calculateAssetDepreciationSchedule`                         | `src/domain/depreciation/calculations.ts`    | Implemented | Standard accounting mathematics and documented timing convention | Explicit cost, residual value, useful life, start year, and full-year additions        | `src/domain/depreciation/calculations.test.ts`    |
 | `calculateWrittenDownValueDepreciation`, `calculateAssetDepreciationSchedule`                           | `src/domain/depreciation/calculations.ts`    | Implemented | Standard accounting mathematics and documented timing convention | Explicit opening carrying value, additions, rate, and residual floor                   | `src/domain/depreciation/calculations.test.ts`    |
 | `calculateDepreciationSchedule`, `summarizeDepreciationByYear`                                          | `src/domain/depreciation/calculations.ts`    | Implemented | Aggregation identity                                             | Exact sums of canonical asset/year depreciation rows                                   | `src/domain/depreciation/calculations.test.ts`    |
+| `calculatePercentageOfPositiveProfitBeforeTax`, `calculateProjectedProfitAndLoss`                       | `src/domain/profit-and-loss/calculations.ts` | Implemented | Arithmetic identities and explicit generic tax convention        | Normalized authoritative flows and source-backed tax configuration                     | `src/domain/profit-and-loss/calculations.test.ts` |
+| `composeProfitAndLossYearInputs`, `calculateProfitAndLossFromAuthoritativeSchedules`                    | `src/domain/profit-and-loss/calculations.ts` | Implemented | Strict composition and year-alignment convention                 | Projection totals, annual depreciation, and explicitly normalized interest expense     | `src/domain/profit-and-loss/calculations.test.ts` |
 
 ## Phase 1 formula reference
 
@@ -361,12 +364,65 @@ Loan inputs and outputs remain currency-neutral canonical decimal strings. All a
 - **Result:** `AnnualLoanRepaymentSummary` rows with opening/closing principal, principal repaid, interest charged/paid, total debt service, and accrued-interest balances.
 - **Rounding:** no reporting-scale rounding; annual totals exactly reconcile to canonical schedule-summary totals within the configured decimal context.
 - **Assumptions:** projection year 1 begins at schedule period 1; no calendar start date is required.
-- **Limitations:** no fiscal-year/calendar-date mapping, partial-year allocation, DSCR, P&L, or cash-flow integration.
+- **Limitations:** no fiscal-year/calendar-date mapping, partial-year allocation, DSCR, cash-flow integration, or automatic decision about which charged/paid/accrued/capitalized interest is a P&L expense.
+
+## Projected profit-and-loss formula reference
+
+The P&L module is a composition/calculation engine, not another source of revenue, operating expenses, depreciation, or loan interest. Its authoritative calculation path is `Projection Engine totals + Depreciation Engine annual expense + explicitly normalized loan/accounting interest expense -> ProfitAndLossYearInput -> P&L formulas`. It imports no UI, persistence, scheme, subsidy, cash-flow, balance-sheet, or viability-metric code.
+
+### Authoritative input boundary
+
+- **Purpose:** isolate P&L composition from upstream line-item structures and prevent duplicate financial formulas.
+- **Inputs:** sequential normalized rows containing year, total revenue, total operating expenses, annual depreciation expense, and explicitly designated interest expense. The interest contract forbids principal repayment/repaid, total debt service, disbursement, closing principal, interest charged/paid, capitalized interest, and accrued interest fields.
+- **Algorithm:** copy the authoritative amounts unchanged into the matching P&L year. Revenue, operating expenses, depreciation, and interest are never recalculated.
+- **Result:** `ProfitAndLossYearInput` rows suitable for deterministic statement calculation.
+- **Rounding:** none.
+- **Assumptions:** revenue and all expense inputs are non-negative, including legitimate zero values. Derived profits may be negative.
+- **Limitations:** product/expense lines, asset additions and balances, principal repayment, disbursement, total debt service, and financing cash flows do not enter this boundary.
+
+### EBITDA, EBIT, PBT, and PAT
+
+- **Purpose:** derive the core projected P&L flow measures for each year.
+- **Inputs:** one validated normalized row plus that year's selected generic tax treatment.
+- **Formula/algorithm:** `EBITDA = revenue − operating expenses`; `EBIT = EBITDA − depreciation`; `profit before tax = EBIT − interest expense`; `profit after tax = profit before tax − tax expense`.
+- **Result:** `ProfitAndLossYear` retains every authoritative input, derived subtotal, tax mode/rate where applicable, tax expense, and PAT.
+- **Rounding:** none; every subtraction uses `ProjectSetuDecimal` and canonical monetary serialization.
+- **Assumptions:** losses at EBITDA, EBIT, PBT, or PAT are valid outputs and are never rejected.
+- **Limitations:** no gross-profit presentation, other income, exceptional items, extraordinary items, comprehensive income, dividends, retained earnings, or Companies Act/lender presentation format.
+
+### Generic positive-PBT tax
+
+- **Purpose:** support an explicit modelling tax without embedding statutory rules.
+- **Inputs:** either `NO_TAX`, or `PERCENTAGE_OF_POSITIVE_PBT` with a source-backed 0–100 percent-point rate and optional unique yearly overrides.
+- **Formula/algorithm:** `tax expense = max(profit before tax, 0) × tax rate / 100`; `NO_TAX` always produces zero. A yearly override replaces the base rate only for its exact year and does not compound or affect later years.
+- **Result:** exact tax expense and PAT. Zero or negative PBT produces zero tax, so PAT equals PBT.
+- **Rounding:** none; no currency, statutory, or display rounding is imposed.
+- **Assumptions:** the caller supplies every rate. Entity type, turnover, activity, location, and scheme participation have no effect.
+- **Limitations:** no Indian Income Tax Act rules, slabs, MAT, AMT, cess, surcharge, GST, deferred tax, loss carry-forward, tax credit, or tax-depreciation adjustment.
+
+### Upstream year alignment and explicit zeros
+
+- **Purpose:** deterministically compose independently calculated schedules without silently inventing values.
+- **Inputs:** one project-scoped projection schedule, one project-scoped depreciation schedule, one project-scoped normalized interest-expense schedule, and a missing-value policy.
+- **Algorithm:** projection years are the authoritative timeline. Project ids must match. Source years must be valid and unique; depreciation or interest years outside the projection fail. Every projection year requires matching depreciation and interest under the default `ERROR` policy. `USE_EXPLICIT_ZERO` must be selected independently for a missing source before zero may be inserted. A supplied canonical numeric zero is a present authoritative value and never triggers missing-value handling.
+- **Result:** `composeProfitAndLossYearInputs` returns normalized aligned rows; `calculateProfitAndLossFromAuthoritativeSchedules` calculates the P&L from those rows.
+- **Rounding:** none.
+- **Assumptions:** P&L schedules currently use ProjectSetu projection-year indices `1..N`; sequential validation is a domain-composition convention, not a statutory accounting rule. A future adapter may attach calendar/fiscal-year labels without changing calculation semantics. Tax overrides identify an existing P&L year.
+- **Limitations:** the loan engine exposes charged, paid, accrued, and capitalized interest separately. The P&L engine does not arbitrarily choose an accounting treatment; the caller must explicitly normalize the amount regarded as interest expense. Multiple-loan aggregation and capitalization policy remain upstream/deferred.
+
+### Cumulative P&L flows
+
+- **Purpose:** provide exact multi-year flow totals without treating any balance as a period expense.
+- **Inputs:** calculated yearly P&L rows.
+- **Formula/algorithm:** independently sum yearly revenue, operating expenses, EBITDA, depreciation, EBIT, interest expense, PBT, tax expense, and PAT.
+- **Result:** `ProfitAndLossCumulativeTotals`, with every field exactly reconciling to its yearly row sum.
+- **Rounding:** no intermediate or summary rounding.
+- **Limitations:** margins are deferred; zero-revenue years therefore do not receive an invented 0% margin. No opening/closing balance-sheet values are summed.
 
 ## Typed calculation failures
 
-`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid depreciation costs/residuals/additions/lives/rates/years or method configurations, invalid loan principal/rates/periods, moratorium inconsistencies, and unsupported loan method/frequency configurations. Decimal syntax remains enforced by the canonical constructors.
+`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid depreciation costs/residuals/additions/lives/rates/years or method configurations, invalid loan principal/rates/periods, moratorium inconsistencies, invalid or duplicate P&L/source years, missing/misaligned P&L source values, negative authoritative P&L expenses, invalid tax configuration/rates/overrides, and unsupported loan/tax configurations. Decimal syntax remains enforced by the canonical constructors.
 
 ## Future calculations
 
-Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff policies, statutory/tax depreciation, partial-year depreciation, acquisitions/disposals, revaluation, impairment, lease accounting, interest integration, tax, P&L/cash-flow/balance-sheet statements, subsidy, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, sensitivity recalculation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.
+Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff and expense/capitalization policies, statutory tax and depreciation, tax adjustments, deferred tax, loss carry-forward, tax credits, partial-year depreciation, acquisitions/disposals, revaluation, impairment, lease accounting, P&L presentation extensions, margins, cash-flow/balance-sheet statements, subsidy accounting, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, sensitivity recalculation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.

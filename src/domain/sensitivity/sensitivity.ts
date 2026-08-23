@@ -1,8 +1,6 @@
 import type { FinancialMetricResults } from "../financials/metrics";
-import type {
-  ProjectedCashFlow,
-  ProjectedProfitAndLoss,
-} from "../financials/statements";
+import type { ProjectedCashFlow } from "../financials/statements";
+import type { ProfitAndLossSchedule } from "../profit-and-loss/profit-and-loss";
 import type { DecimalValue, Identifier } from "../shared/types";
 
 export const adjustmentOperations = [
@@ -30,7 +28,7 @@ export interface SensitivityScenario {
 
 export interface SensitivityResult {
   readonly scenarioId: Identifier;
-  readonly profitAndLoss?: ProjectedProfitAndLoss;
+  readonly profitAndLoss?: ProfitAndLossSchedule;
   readonly cashFlow?: ProjectedCashFlow;
   readonly metrics?: FinancialMetricResults;
   readonly repaymentCapacity?: string;

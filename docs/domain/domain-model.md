@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, and asset-wise depreciation engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
+The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, and projected profit-and-loss engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, cash-flow/balance-sheet generation, advanced metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -87,15 +87,29 @@ The original asset is available for a full year beginning in `depreciationStartY
 
 All authoritative arithmetic uses `ProjectSetuDecimal` without intermediate currency rounding. Straight Line's final useful-life year consumes the exact remaining depreciable balance so carrying value reaches residual value even when annual division repeats in the decimal context. WDV is capped whenever its normal rate would cross the residual floor. Zero cost and 0% WDV rates produce valid zero-depreciation behavior; 100% WDV remains capped by residual value.
 
+## Projected profit and loss
+
+`ProfitAndLossYearInput` is the normalized authoritative boundary: projection year, revenue, operating expenses, depreciation, and interest expense. It deliberately excludes upstream product/expense lines, asset balances/additions, loan principal/payment fields, and all source-module calculation assumptions. `ProfitAndLossProjectionInput` adds project identity and an explicit tax configuration. Revenue and expenses must be non-negative authoritative flows, while EBITDA, EBIT, profit before tax, and profit after tax may be negative.
+
+`ProfitAndLossYear` calculates `EBITDA = revenue − operating expenses`, `EBIT = EBITDA − depreciation`, `profit before tax = EBIT − interest expense`, and `profit after tax = profit before tax − tax expense`. `ProfitAndLossSchedule` retains primary yearly rows plus exact cumulative sums for every implemented P&L flow. Cumulative values are period-flow totals, not balance-like amounts.
+
+Tax is a discriminated assumption: `NO_TAX` or `PERCENTAGE_OF_POSITIVE_PBT`. Percentage tax is `max(PBT, 0) × rate / 100`; a zero or negative PBT produces zero tax and no credit. The source-backed base rate and every override must remain within 0–100 percent points. An override applies only to its named year and does not compound or change another year. No entity, turnover, location, scheme, or statutory rule supplies a rate.
+
+`composeProfitAndLossYearInputs` maps authoritative projection totals and annual depreciation by exact year, then combines an explicit `ProfitAndLossInterestExpenseSchedule`. Project ids and years must align; duplicates, invalid years, extra years, and missing values fail by default. Missing depreciation or interest becomes zero only when the caller explicitly selects `USE_EXPLICIT_ZERO` for that source. A supplied canonical zero is present data and is never treated as missing. The interest contract admits only `year` and explicitly normalized `interestExpense`; principal repayment, debt service, disbursement, closing principal, and the loan module's charged/paid/accrued/capitalized fields are forbidden. The P&L engine therefore cannot silently select an accounting basis. An upstream accounting policy must normalize the loan output into the interest-expense schedule.
+
+P&L schedules currently use ProjectSetu projection-year indices `1..N`. Requiring a sequential series beginning at 1 is a current domain-composition convention, not a statutory accounting or presentation rule. A future adapter may map those indices to calendar years, fiscal years, or reporting labels without changing any P&L formula semantics.
+
+All P&L subtraction, percentage tax, and aggregation use `ProjectSetuDecimal` without intermediate rounding. Margins are deferred rather than assigning a misleading zero percentage when revenue is zero.
+
 ## Other financial assumptions
 
 `FinancialAssumptions` groups the projection period, explicit capacity utilisation, escalation/inflation, interest, tax, and depreciation assumptions. Each assumption is traceable to a source. Asset-wise `DepreciationAssumption` records category, method, optional rate, and an explicit authority basis so Companies Act or income-tax treatment is never silently selected.
 
 This general financial-assumption contract is not the depreciation calculation input. The dedicated engine uses `DepreciableAsset` so method-specific required fields and asset additions are explicit.
 
-## Financial statements and metrics
+## Other financial statements and metrics
 
-`ProjectedProfitAndLoss`, `ProjectedCashFlow`, and `ProjectedBalanceSheet` are multi-year result contracts with explicit line-item vocabulary. They do not calculate or reconcile values.
+`ProjectedCashFlow` and `ProjectedBalanceSheet` remain multi-year result contracts with explicit line-item vocabulary; they do not calculate or reconcile values. The former placeholder P&L result has been superseded by the dedicated `ProfitAndLossSchedule` calculation contract.
 
 Metric result contracts cover break-even, year-wise and average DSCR, project/equity IRR, NPV with its discount rate, ROI, payback, and common financial ratios. No formula or target threshold is implemented.
 
@@ -113,4 +127,4 @@ Metric result contracts cover break-even, year-wise and average DSCR, project/eq
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, interest integration, statements, metrics, ratios, and sensitivity. Statutory/tax depreciation, monthly or day-count timing, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, advanced interest-accounting treatment, cash flow, balance sheet, metrics, ratios, and sensitivity. Statutory tax, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, monthly or day-count timing, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.

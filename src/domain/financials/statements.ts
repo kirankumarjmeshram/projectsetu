@@ -4,30 +4,6 @@ import type {
   ProjectionYear,
 } from "../shared/types";
 
-export interface ProjectedProfitAndLossYear {
-  readonly year: ProjectionYear;
-  readonly sales: MonetaryAmount;
-  readonly otherIncome: MonetaryAmount;
-  readonly rawMaterials: MonetaryAmount;
-  readonly directExpenses: MonetaryAmount;
-  readonly grossProfit: MonetaryAmount;
-  readonly salary: MonetaryAmount;
-  readonly administrativeExpenses: MonetaryAmount;
-  readonly sellingExpenses: MonetaryAmount;
-  readonly ebitda: MonetaryAmount;
-  readonly depreciation: MonetaryAmount;
-  readonly ebit: MonetaryAmount;
-  readonly interest: MonetaryAmount;
-  readonly profitBeforeTax: MonetaryAmount;
-  readonly tax: MonetaryAmount;
-  readonly profitAfterTax: MonetaryAmount;
-}
-
-export interface ProjectedProfitAndLoss {
-  readonly projectId: Identifier;
-  readonly years: readonly ProjectedProfitAndLossYear[];
-}
-
 export interface ProjectedCashFlowYear {
   readonly year: ProjectionYear;
   readonly openingCash: MonetaryAmount;
