@@ -1,6 +1,6 @@
 # ProjectSetu
 
-ProjectSetu is an early-stage application for creating bankable project reports, subsidy-based DPRs, financial projections, and document-supported estimates. The repository contains engineering foundations, canonical domain contracts, Core Financial Engine Phase 1 arithmetic identities, and a deterministic term-loan repayment engine. Business workflows, scheme rules, statements and viability metrics, document processing, and AI features are not implemented.
+ProjectSetu is an early-stage application for creating bankable project reports, subsidy-based DPRs, financial projections, and document-supported estimates. The repository contains engineering foundations, canonical domain contracts, Core Financial Engine Phase 1 arithmetic identities, a deterministic term-loan repayment engine, and a revenue/operating-expense projection engine. Business workflows, scheme rules, statements and viability metrics, document processing, and AI features are not implemented.
 
 ## Architecture and stack
 

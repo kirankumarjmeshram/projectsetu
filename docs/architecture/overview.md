@@ -2,7 +2,7 @@
 
 ## Status
 
-The repository implements a Next.js application shell, a development landing page, quality tooling, canonical provider-independent TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, and a deterministic term-loan repayment engine described in [the domain model](../domain/domain-model.md). Product workflows, persistence, statements, viability metrics, and other advanced financial calculations remain unimplemented.
+The repository implements a Next.js application shell, a development landing page, quality tooling, canonical provider-independent TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, a deterministic term-loan repayment engine, and a revenue/operating-expense projection engine described in [the domain model](../domain/domain-model.md). Product workflows, persistence, statements, viability metrics, and other advanced financial calculations remain unimplemented.
 
 ## Dependency direction
 
@@ -19,6 +19,6 @@ Report generation, persistence, and UI must consume the same typed domain result
 
 The domain layer imports only other domain modules plus the accepted core arithmetic dependency, `decimal.js`. It has no React, Next.js, API, database, storage, AI, or document-rendering dependencies and can be tested under a Node environment.
 
-Domain modules are organized around project identity, applicants and business entities, costs, operations, working capital, financing, loans, subsidy, scheme versions, financial contracts, sensitivity, documents, reports, provenance, and validation. Cohesive modules expose their own public contracts; there is intentionally no global barrel file.
+Domain modules are organized around project identity, applicants and business entities, costs, operations, projections, working capital, financing, loans, subsidy, scheme versions, financial contracts, sensitivity, documents, reports, provenance, and validation. Cohesive modules expose their own public contracts; there is intentionally no global barrel file.
 
 No database, authentication, object storage, PDF, OCR, AI, or scheme-rule provider has been selected. Decimal arithmetic is established by ADR 0001 without selecting a persistence provider.

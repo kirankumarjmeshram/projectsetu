@@ -2,7 +2,7 @@
 
 ## Status
 
-The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, and the reusable term-loan repayment engine are implemented. Phase 1 covers project cost, revenue, operating inputs/expenses, escalation, means of finance, reconciliation, and core working capital. The loan engine covers nominal period-rate conversion, reducing-balance interest, equal-principal and EMI schedules, explicit moratorium treatments, summaries, and projection-year aggregation. No rates or business defaults are embedded.
+The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, and revenue/operating-expense projection engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. No rates or business defaults are embedded.
 
 All financial calculations must be deterministic domain logic. AI may later explain or narrate validated results, but it must never be the source of truth for project cost, promoter contribution, subsidy, bank finance, interest, depreciation, profitability, DSCR, IRR, NPV, break-even, or loan repayment.
 
@@ -22,6 +22,7 @@ Authoritative financial calculations must use the configured `decimal.js` primit
 - Operational capacity, products/services, inputs, manpower, and expenses
 - Working-capital inputs and result shape
 - Means of finance plus configured loan terms, calculated repayment periods, loan summaries, and annual repayment summaries
+- Revenue and operating-expense projection assumptions, yearly overrides, calculated lines, grouped totals, and pre-depreciation/interest/tax operating surplus
 - Traceable financial assumptions and asset-wise depreciation assumptions
 - Projected profit-and-loss, cash-flow, and balance-sheet result shapes
 - Break-even, DSCR, IRR, NPV, ROI, payback, and ratio result shapes
@@ -80,6 +81,9 @@ Display formatting is independent. Canonical domain values never contain the INR
 | `calculateEmiPayment`                                                                                   | `src/domain/loan/calculations.ts`            | Implemented | Standard financial mathematics                                   | Standard amortising-loan payment relationship, including zero-rate branch              | `src/domain/loan/calculations.test.ts`            |
 | `generateLoanRepaymentSchedule`                                                                         | `src/domain/loan/calculations.ts`            | Implemented | Standard financial mathematics and documented domain conventions | Reducing-balance schedule, explicit moratorium policy, and final-period reconciliation | `src/domain/loan/calculations.test.ts`            |
 | `summarizeLoanScheduleByYear`                                                                           | `src/domain/loan/calculations.ts`            | Implemented | Aggregation identity and projection-year convention              | Canonical repayment periods grouped by frequency count                                 | `src/domain/loan/calculations.test.ts`            |
+| `calculateRevenueProjection`                                                                            | `src/domain/projection/calculations.ts`      | Implemented | Arithmetic identity and documented projection convention         | Quantity, capacity factor, unit price, explicit overrides, and compound growth         | `src/domain/projection/calculations.test.ts`      |
+| `calculateOperatingExpenseProjection`                                                                   | `src/domain/projection/calculations.ts`      | Implemented | Arithmetic identity and documented projection convention         | Fixed annual amounts or explicit percentage of projected revenue                       | `src/domain/projection/calculations.test.ts`      |
+| `calculateRevenueAndOperatingExpenseProjection`                                                         | `src/domain/projection/calculations.ts`      | Implemented | Aggregation identity                                             | Canonical revenue less canonical operating expenses                                    | `src/domain/projection/calculations.test.ts`      |
 
 ## Phase 1 formula reference
 
@@ -184,6 +188,60 @@ All Phase 1 calculations are pure, retain their source input in line results, an
 - **Limitations:** no MPBF, Tandon Committee norm, minimum margin, residual floor, or bank policy.
 - **Classification:** arithmetic identities after explicit inputs; direct-amount fallback is a domain convention.
 
+## Revenue and operating expense projection formula reference
+
+The projection module extends, rather than replaces, Phase 1's explicit single-year operations calculations. It accepts source-backed year-one assumptions, an explicit positive projection period, and optional year-specific overrides. All money, quantities, percentages, growth, multiplication, compounding, subtraction, and aggregation use `ProjectSetuDecimal`. Native numbers are limited to validated integer years, array indices, and loop control.
+
+### Revenue projection
+
+- **Purpose:** project revenue for one or more products/services across an explicit number of years.
+- **Inputs:** product/service name, quantity, unit price, capacity-utilisation percentage, quantity-growth percentage, selling-price-escalation percentage, projection period, and optional year-specific overrides.
+- **Formula/algorithm:** `effective quantity = quantity × capacity utilisation / 100`; `revenue = effective quantity × unit price`. Each line is calculated separately and exact line revenues are summed for the year's total revenue.
+- **Result:** `RevenueProjectionYear` rows with transparent line inputs, selected quantity/capacity/price, effective quantity, rates used for the following year, and total revenue.
+- **Rounding:** no intermediate, yearly, or display rounding.
+- **Assumptions:** quantity and unit price must be non-negative. Zero quantity, zero unit price, or zero capacity therefore produces valid zero revenue. Capacity utilisation is an explicit 0–100 percent-point value. An empty revenue collection produces canonical zero totals.
+- **Limitations:** no physical production/inventory flow, seasonality, product mix, returns, discounts, indirect taxes, date-based periods, or capacity constraint beyond the supplied utilisation factor.
+
+### Growth, escalation, and yearly overrides
+
+- **Purpose:** allow quantity, selling price, capacity, and applicable rates to vary across projection years without inferring forecasts.
+- **Inputs:** default quantity growth and selling-price escalation of at least −100%, plus optional overrides identified by a unique projection year.
+- **Formula/algorithm:** absent an override, `next quantity = selected current quantity × (1 + quantity growth / 100)` and `next price = selected current price × (1 + price escalation / 100)`. A quantity or price override replaces that year's calculated value and becomes the base for the following year. A rate override controls growth from that selected year to the next. Capacity overrides apply only to their named year; otherwise the base capacity assumption applies.
+- **Result:** auditable yearly values and the exact rates used to derive the following year's values.
+- **Rounding:** compounding remains in the accepted 40-significant-digit decimal context with no currency rounding.
+- **Assumptions:** year 1 uses base values unless explicitly overridden. Rates are percent points; `"10"` means 10%. Zero growth preserves the selected value; negative rates model decline; −100% reduces the following year's value to zero.
+- **Limitations:** rates below −100% are rejected because they would produce negative projected values. Overrides outside the projection period or duplicate overrides for one line/year are typed failures.
+
+### Fixed annual operating expenses
+
+- **Purpose:** project stated annual expense amounts such as salaries, rent, repairs, or custom overheads.
+- **Inputs:** expense name/category, year-one annual amount, explicit annual escalation of at least −100%, and optional yearly amount/rate overrides.
+- **Formula/algorithm:** the selected amount is the current year's expense; `next amount = selected current amount × (1 + escalation / 100)`. An amount override becomes the next escalation base.
+- **Result:** `OperatingExpenseProjectionLine` rows showing the selected annual amount, escalation used for the next year, and calculated expense.
+- **Rounding:** none.
+- **Assumptions:** zero expense is valid. Expense categories classify output but do not supply amounts or rates.
+- **Limitations:** no monthly phasing, quantity-consumption norms, payroll headcount, statutory employment cost, allocation, tax, or supplier-specific behavior.
+
+### Percentage-of-revenue operating expenses
+
+- **Purpose:** represent variable expenses for which the caller explicitly selects projected revenue as the basis.
+- **Inputs:** expense name/category, percentage of revenue, explicit rate escalation of at least −100%, projected yearly revenue, and optional yearly rate overrides.
+- **Formula/algorithm:** `expense = total projected revenue × percentage / 100`; `next percentage = selected current percentage × (1 + rate escalation / 100)`.
+- **Result:** line rows retain the exact percentage and resulting amount. A zero-revenue year produces zero expense.
+- **Rounding:** none.
+- **Assumptions:** the percentage and every projected escalated rate must remain between 0 and 100 percent points. Rate escalation changes the rate, not an already-calculated amount.
+- **Limitations:** projected revenue is the only percentage basis implemented; percentage of raw material, quantity, contribution, or another line is deferred.
+
+### Expense grouping and operating surplus
+
+- **Purpose:** provide the yearly structure required by future statements without implementing a P&L.
+- **Inputs:** canonical expense lines and canonical total revenue for the same projection year.
+- **Formula/algorithm:** exact line amounts are grouped into raw-material/variable costs, wages, salaries, utilities, repairs/maintenance, and administrative/other costs. Wages, salaries, utilities, repairs, and raw materials follow their named categories. Other percentage-of-revenue lines are variable; remaining fixed lines are administrative/other. `total operating expenses = sum of all expense lines`; `operating surplus before depreciation, interest and tax = total revenue − total operating expenses`.
+- **Result:** one `RevenueAndOperatingExpenseProjectionYear` per year, retaining detailed revenue/expense lines and exact grouped totals.
+- **Rounding:** none; line, category, total-expense, and surplus values reconcile exactly in the configured decimal context.
+- **Assumptions:** custom fixed items are administrative/other; custom percentage-based items are variable. The result is a projection-domain output, not a financial statement.
+- **Limitations:** depreciation, loan interest, taxation, P&L, cash flow, balance sheet, DSCR, IRR, NPV, subsidies, and scheme rules are not calculated.
+
 ## Loan formula reference
 
 Loan inputs and outputs remain currency-neutral canonical decimal strings. All authoritative money, rate, interest, power, payment, balance, and aggregation operations use `ProjectSetuDecimal`. Native numbers are used only for validated integer period counts, loop indices, and projection-year grouping.
@@ -260,8 +318,8 @@ Loan inputs and outputs remain currency-neutral canonical decimal strings. All a
 
 ## Typed calculation failures
 
-`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid loan principal/rates/periods, moratorium inconsistencies, and unsupported loan method/frequency configurations. Decimal syntax remains enforced by the canonical constructors.
+`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid loan principal/rates/periods, moratorium inconsistencies, and unsupported loan method/frequency configurations. Decimal syntax remains enforced by the canonical constructors.
 
 ## Future calculations
 
-Manpower/pay-period totals, capacity-based production forecasts, inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff policies, depreciation, tax, statements, subsidy, scheme eligibility, advanced metrics, ratios, sensitivity recalculation, validation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.
+Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff policies, depreciation, interest integration, tax, P&L/cash-flow/balance-sheet statements, subsidy, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, sensitivity recalculation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.

@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, and deterministic term-loan repayment engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
+The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, and revenue/operating-expense projection engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -44,6 +44,16 @@ Sensitive and registration identifiers are represented through protected referen
 `ProductOrService` supports multiple outputs with independent units and year-wise selling-price, production, and sales assumptions. `OperatingInput`, `ManpowerRequirement`, and `OperatingExpense` cover production inputs, staffing, and fixed/variable costs. Known expense categories aid consistency while permitting additional category codes.
 
 Phase 1 adds `RevenueLineResult`/`RevenueSummary`, operating-input base/addition results, and yearly operating-expense summaries. Revenue uses explicit sales quantity and rate; it never infers capacity utilisation. Manpower totals remain deferred because pay-period semantics are not yet canonical.
+
+## Revenue and operating expense projections
+
+`RevenueAndOperatingExpenseProjectionInput` is configured input for an explicit positive number of projection years. `RevenueProjectionAssumption` records a product/service name and unit plus source-backed year-one quantity, unit price, capacity utilisation, quantity growth, and selling-price escalation. Optional `RevenueProjectionYearOverride` records identify a specific projection year and may replace any of those values. Quantity and price overrides become the next year's growth base; capacity overrides apply only to their named year.
+
+`OperatingExpenseProjectionAssumption` is a discriminated union. `FIXED_ANNUAL_AMOUNT` lines carry a source-backed annual amount and escalation rate. `PERCENTAGE_OF_REVENUE` lines carry a source-backed percentage of total projected revenue and an explicit escalation rate for that percentage. Both support method-specific yearly overrides. Categories cover raw materials, wages, salaries, electricity, fuel, repairs, rent, transport, administration, marketing, telephone/internet, stationery/postage, miscellaneous overheads, and named custom items.
+
+Calculated output is separate from configured input. `RevenueProjectionLine` exposes selected quantity, capacity, effective quantity, unit price, next-year growth rates, and revenue. `OperatingExpenseProjectionLine` exposes its method, selected amount or rate, next-year escalation, and expense. `RevenueAndOperatingExpenseProjectionYear` retains both detailed line collections plus revenue, grouped operating costs, total expenses, and operating surplus before depreciation, interest, and tax.
+
+Quantities and prices must be non-negative; zero quantity, zero price, or zero capacity produces valid zero revenue. Fixed expense amounts may be zero. Capacity and percentage-of-revenue rates remain within 0–100 percent points. Quantity growth, selling-price escalation, and expense escalation may be negative to model decline but cannot be below −100%. A quantity or price override becomes the authoritative base for subsequent compounding. All calculations are unrounded `ProjectSetuDecimal` operations. Depreciation, interest, tax, financial statements, viability metrics, subsidies, and scheme rules remain outside this module.
 
 ## Working capital
 
@@ -91,4 +101,4 @@ Metric result contracts cover break-even, year-wise and average DSCR, project/eq
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, production forecasts, irregular or changing-rate loan behavior, subsidy, depreciation, statements, metrics, ratios, and sensitivity. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, depreciation, interest integration, statements, metrics, ratios, and sensitivity. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
