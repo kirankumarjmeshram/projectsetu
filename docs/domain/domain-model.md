@@ -7,10 +7,16 @@ The TypeScript contracts listed below are implemented in `src/domain`. They esta
 ## Shared contracts
 
 - `Identifier`, ISO date aliases, `DateRange`, `ProjectionYear`, and audit metadata provide lightweight common vocabulary.
-- `MonetaryAmount` and `Percentage` are provisional decimal-text boundary aliases. They are not arithmetic implementations and do not settle ADR 0001.
+- `DecimalValue`, `MonetaryAmount`, and `Percentage` are distinct branded, canonical decimal-string contracts created by strict constructors.
+- `ProjectSetuDecimal` is the accepted arbitrary-precision calculation primitive configured to 40 significant digits with half-even precision rounding.
+- Percentages use percent points: `percentage("10")` means 10% and converts explicitly to the calculation factor `0.1`.
 - `Assumption<T>` requires a source for traceable assumptions.
 - `SourceReference` supports official guidelines, quotations, user input, estimates, consultant assumptions, historical data, system calculations, and extensible notes without requiring a URL.
 - `ValidationIssue` reports `ERROR`, `WARNING`, or `INFO` with a stable code, message, optional path, and optional context.
+
+Financial decimal input must be a finite plain-decimal string. Native numbers, empty values, malformed text, and exponential notation are rejected rather than coerced. Negative values are valid at the primitive level because statements and adjustments may be negative; field-specific restrictions belong to future validation.
+
+Canonical values contain no currency symbol, grouping separators, or display scale. APIs and future database adapters should exchange exact decimal strings. Calculations convert branded values to `ProjectSetuDecimal`, use method-based arithmetic, and serialize back through `toDecimalValue`. Display formatting remains a separate UI/report responsibility.
 
 ## Project
 

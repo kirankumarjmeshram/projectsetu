@@ -2,6 +2,7 @@ import type { Applicant } from "../applicant/applicant";
 import type { BusinessEntity } from "../business/business-entity";
 import type { ProjectCost } from "../project-cost/project-cost";
 import type { Project } from "../project/project";
+import { monetaryAmount } from "../shared/decimal";
 import type { SourceReference } from "../shared/provenance";
 
 export const sampleUserSource: SourceReference = {
@@ -41,7 +42,7 @@ export const exampleApplicant: Applicant = {
   name: "Example Applicant",
   education: ["Synthetic qualification"],
   contributionCapacity: {
-    value: "100000.00",
+    value: monetaryAmount("100000.00"),
     source: sampleUserSource,
   },
 };
@@ -61,10 +62,10 @@ export const sampleProjectCost: ProjectCost = {
       description: "Demo Equipment",
       category: "EQUIPMENT",
       amount: {
-        value: "250000.00",
+        value: monetaryAmount("250000.00"),
         source: sampleUserSource,
       },
     },
   ],
-  statedTotal: "250000.00",
+  statedTotal: monetaryAmount("250000.00"),
 };

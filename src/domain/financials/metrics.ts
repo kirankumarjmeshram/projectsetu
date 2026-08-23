@@ -1,4 +1,5 @@
 import type {
+  DecimalValue,
   Identifier,
   MonetaryAmount,
   Percentage,
@@ -7,7 +8,7 @@ import type {
 
 export interface YearlyRatio {
   readonly year: ProjectionYear;
-  readonly value: string;
+  readonly value: DecimalValue;
 }
 
 export interface BreakEvenResult {
@@ -18,7 +19,7 @@ export interface BreakEvenResult {
 export interface DSCRResult {
   readonly projectId: Identifier;
   readonly yearlyDSCR: readonly YearlyRatio[];
-  readonly averageDSCR: string;
+  readonly averageDSCR: DecimalValue;
 }
 
 export const irrTypes = ["PROJECT_IRR", "EQUITY_IRR"] as const;

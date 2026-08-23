@@ -3,7 +3,7 @@ import type {
   ProjectedCashFlow,
   ProjectedProfitAndLoss,
 } from "../financials/statements";
-import type { Identifier, Percentage } from "../shared/types";
+import type { DecimalValue, Identifier } from "../shared/types";
 
 export const adjustmentOperations = [
   "INCREASE_BY_PERCENTAGE",
@@ -16,7 +16,7 @@ export interface ScenarioAdjustment {
   readonly id: Identifier;
   readonly targetPath: string;
   readonly operation: AdjustmentOperation;
-  readonly value: string | Percentage;
+  readonly value: DecimalValue;
   readonly notes?: string;
 }
 
