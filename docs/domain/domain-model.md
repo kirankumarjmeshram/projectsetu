@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, and revenue/operating-expense projection engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
+The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, and asset-wise depreciation engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced statements/metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -77,9 +77,21 @@ Positive principal requires at least one post-moratorium amortization period. Ze
 
 `ProjectCostEligibilitySummary` separates total, eligible, and ineligible project cost. `SubsidyAssessment` can represent a rate, ceiling, calculated and admissible amounts, beneficiary contribution, bank finance, release mechanism, lock-in, conditions, and provenance. All fields are neutral to scheme behavior; no eligibility rule or subsidy formula exists.
 
-## Financial assumptions and depreciation
+## Depreciation
+
+`DepreciationProjectionInput` supplies an explicit positive projection period and individual `DepreciableAsset` assumptions. Every asset has a custom name, a neutral category, original cost, residual value, start year, and either Straight Line useful life or Written Down Value rate. Rates and useful lives are source-backed assumptions; categories never select rates or statutory treatment. Optional `DepreciationAssetAddition` records add source-backed cost and their own residual value in a stated projection year.
+
+`AssetDepreciationYear` exposes opening and closing gross value, additions, opening carrying value, full-year depreciation base, depreciation, accumulated depreciation, closing carrying value, cumulative residual floor, and method. `AssetDepreciationSchedule` retains these rows asset-by-asset. `AggregateDepreciationYear` exactly sums the underlying rows into opening/closing gross fixed assets, additions, annual and accumulated depreciation, and closing net carrying value.
+
+The original asset is available for a full year beginning in `depreciationStartYear`. Additions are available for depreciation for their full stated projection year. A Straight Line addition begins its own independent useful-life stream using the asset's configured useful life and its explicitly supplied residual value; an exhausted component is never restarted by another active addition. WDV applies the supplied rate to opening carrying value plus that year's additions. Each addition's residual value is added to the asset's cumulative residual floor. Addition ids must be unique within their parent asset. Multiple distinct additions may share a year; they are processed in supplied order and combined into that year's addition total. No monthly, daily, half-year, acquisition-date, or disposal convention is inferred.
+
+All authoritative arithmetic uses `ProjectSetuDecimal` without intermediate currency rounding. Straight Line's final useful-life year consumes the exact remaining depreciable balance so carrying value reaches residual value even when annual division repeats in the decimal context. WDV is capped whenever its normal rate would cross the residual floor. Zero cost and 0% WDV rates produce valid zero-depreciation behavior; 100% WDV remains capped by residual value.
+
+## Other financial assumptions
 
 `FinancialAssumptions` groups the projection period, explicit capacity utilisation, escalation/inflation, interest, tax, and depreciation assumptions. Each assumption is traceable to a source. Asset-wise `DepreciationAssumption` records category, method, optional rate, and an explicit authority basis so Companies Act or income-tax treatment is never silently selected.
+
+This general financial-assumption contract is not the depreciation calculation input. The dedicated engine uses `DepreciableAsset` so method-specific required fields and asset additions are explicit.
 
 ## Financial statements and metrics
 
@@ -101,4 +113,4 @@ Metric result contracts cover break-even, year-wise and average DSCR, project/eq
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, depreciation, interest integration, statements, metrics, ratios, and sensitivity. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, interest integration, statements, metrics, ratios, and sensitivity. Statutory/tax depreciation, monthly or day-count timing, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.

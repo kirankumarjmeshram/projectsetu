@@ -2,7 +2,7 @@
 
 ## Status
 
-The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, and revenue/operating-expense projection engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. No rates or business defaults are embedded.
+The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, revenue/operating-expense projection engine, and asset-wise depreciation engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. The depreciation engine adds Straight Line and Written Down Value schedules from explicit per-asset assumptions. No rates or business defaults are embedded.
 
 All financial calculations must be deterministic domain logic. AI may later explain or narrate validated results, but it must never be the source of truth for project cost, promoter contribution, subsidy, bank finance, interest, depreciation, profitability, DSCR, IRR, NPV, break-even, or loan repayment.
 
@@ -23,7 +23,7 @@ Authoritative financial calculations must use the configured `decimal.js` primit
 - Working-capital inputs and result shape
 - Means of finance plus configured loan terms, calculated repayment periods, loan summaries, and annual repayment summaries
 - Revenue and operating-expense projection assumptions, yearly overrides, calculated lines, grouped totals, and pre-depreciation/interest/tax operating surplus
-- Traceable financial assumptions and asset-wise depreciation assumptions
+- Source-backed asset depreciation inputs, additions, per-asset schedules, and aggregate yearly summaries
 - Projected profit-and-loss, cash-flow, and balance-sheet result shapes
 - Break-even, DSCR, IRR, NPV, ROI, payback, and ratio result shapes
 - General sensitivity scenarios and their result shape
@@ -84,6 +84,9 @@ Display formatting is independent. Canonical domain values never contain the INR
 | `calculateRevenueProjection`                                                                            | `src/domain/projection/calculations.ts`      | Implemented | Arithmetic identity and documented projection convention         | Quantity, capacity factor, unit price, explicit overrides, and compound growth         | `src/domain/projection/calculations.test.ts`      |
 | `calculateOperatingExpenseProjection`                                                                   | `src/domain/projection/calculations.ts`      | Implemented | Arithmetic identity and documented projection convention         | Fixed annual amounts or explicit percentage of projected revenue                       | `src/domain/projection/calculations.test.ts`      |
 | `calculateRevenueAndOperatingExpenseProjection`                                                         | `src/domain/projection/calculations.ts`      | Implemented | Aggregation identity                                             | Canonical revenue less canonical operating expenses                                    | `src/domain/projection/calculations.test.ts`      |
+| `calculateStraightLineAnnualDepreciation`, `calculateAssetDepreciationSchedule`                         | `src/domain/depreciation/calculations.ts`    | Implemented | Standard accounting mathematics and documented timing convention | Explicit cost, residual value, useful life, start year, and full-year additions        | `src/domain/depreciation/calculations.test.ts`    |
+| `calculateWrittenDownValueDepreciation`, `calculateAssetDepreciationSchedule`                           | `src/domain/depreciation/calculations.ts`    | Implemented | Standard accounting mathematics and documented timing convention | Explicit opening carrying value, additions, rate, and residual floor                   | `src/domain/depreciation/calculations.test.ts`    |
+| `calculateDepreciationSchedule`, `summarizeDepreciationByYear`                                          | `src/domain/depreciation/calculations.ts`    | Implemented | Aggregation identity                                             | Exact sums of canonical asset/year depreciation rows                                   | `src/domain/depreciation/calculations.test.ts`    |
 
 ## Phase 1 formula reference
 
@@ -242,6 +245,50 @@ The projection module extends, rather than replaces, Phase 1's explicit single-y
 - **Assumptions:** custom fixed items are administrative/other; custom percentage-based items are variable. The result is a projection-domain output, not a financial statement.
 - **Limitations:** depreciation, loan interest, taxation, P&L, cash flow, balance sheet, DSCR, IRR, NPV, subsidies, and scheme rules are not calculated.
 
+## Depreciation formula reference
+
+The depreciation module is a pure calculation boundary. It does not import projects, revenue, loans, statements, schemes, subsidy logic, UI, or infrastructure. Monetary amounts and supplied percentage rates remain canonical decimal strings; native numbers are used only for validated whole projection years, useful-life years, indices, and loop control.
+
+### Straight Line depreciation
+
+- **Purpose:** spread each asset component's depreciable amount across an explicit useful life.
+- **Inputs:** source-backed original cost and residual value, positive whole useful-life years, depreciation start year, and optional source-backed additions.
+- **Formula/algorithm:** `depreciable amount = cost − residual value`; `annual depreciation = depreciable amount / useful life`. The original asset and each addition are independent components using the asset's configured useful life. Each component tracks its own elapsed life, accumulated depreciation, and residual value; exhausting one component cannot restart it while another remains active. A component's final useful-life year consumes its exact remaining depreciable amount, and total depreciation is capped at the cumulative residual floor.
+- **Result:** asset/year rows exposing gross value movement, additions, depreciation base, annual and accumulated depreciation, closing carrying value, and residual floor.
+- **Rounding:** none. Repeating division remains in the configured 40-significant-digit Decimal.js context; no currency/display scale is imposed.
+- **Assumptions:** the original asset is available for the full `depreciationStartYear`. A later addition begins a new full useful-life stream in its stated year. Zero cost is valid.
+- **Limitations:** no rate-derived useful life, partial-year convention, acquisition date, statutory classification, or automatic rate/life lookup.
+
+### Written Down Value depreciation
+
+- **Purpose:** apply an explicit declining-balance percentage while preserving a residual floor.
+- **Inputs:** authoritative opening carrying value, additions in the year, cumulative residual value, and a supplied 0–100 percent-point rate.
+- **Formula/algorithm:** under the full-year addition convention, `depreciation base = opening carrying value + additions`; `normal depreciation = depreciation base × rate / 100`; `depreciation = min(normal depreciation, depreciation base − residual value)`; `closing carrying value = depreciation base − depreciation`.
+- **Result:** each closing carrying value becomes the next asset row's opening carrying value exactly.
+- **Rounding:** none; multiplication, percentage conversion, cap, and balance movement use `ProjectSetuDecimal`.
+- **Assumptions:** 0% is valid. 100% reaches zero only when the cumulative residual floor is zero.
+- **Limitations:** no statutory block pooling, written-down tax block behavior, half-year tax rule, or category-selected rate.
+
+### Additions, continuity, and residual value
+
+- **Purpose:** show capital additions explicitly without silently treating them as present from year 1.
+- **Inputs:** an id unique within the parent asset, projection year, non-negative cost, and an explicit non-negative residual value no greater than that addition's cost.
+- **Formula/algorithm:** additions enter gross and carrying values in their stated year and are available for depreciation for that full projection year. The addition's residual value increases the cumulative asset floor. For every row, `opening carrying value + additions − depreciation = closing carrying value`, `opening gross value + additions = closing gross value`, and `accumulated depreciation = closing gross value − closing carrying value`.
+- **Result:** additions remain visible in asset rows and aggregate yearly summaries; no addition is inferred in another year.
+- **Rounding:** none.
+- **Assumptions:** additions cannot precede the asset's depreciation start year and must fall within the projection. Multiple distinct additions may use the same year; the engine processes them in supplied order and combines their cost and residual values in that year's row. Duplicate addition ids are rejected.
+- **Limitations:** no monthly/day timing, commissioning date, disposal, asset sale, gain/loss, revaluation, or impairment.
+
+### Asset and aggregate schedules
+
+- **Purpose:** provide deterministic asset-by-asset schedules and exact yearly totals for later consumers.
+- **Inputs:** project identifier, positive whole projection period, and zero or more validated assets.
+- **Formula/algorithm:** schedules begin at each asset's configured depreciation start year. Annual summaries sum every available asset row for opening/closing gross value, additions, annual depreciation, accumulated depreciation, and closing net carrying value. Years with no active asset rows contain canonical zeros.
+- **Result:** `DepreciationSchedule` retains both canonical asset schedules and `AggregateDepreciationYear` summaries. Aggregate depreciation and carrying values exactly equal their underlying row sums.
+- **Rounding:** no intermediate or summary rounding.
+- **Validation:** negative costs, residuals, or additions; residual over related cost; duplicate addition ids; invalid projection/start/addition years; non-positive/non-whole useful life; rates outside 0–100%; missing method inputs; and incompatible or unsupported method configurations return typed failures.
+- **Limitations:** no P&L, cash-flow, balance-sheet, taxation, interest, DSCR, IRR, NPV, subsidy, or scheme-specific integration. Companies Act and Income Tax Act rules, statutory rates, tax blocks, half-year rules, dates, disposals, revaluation, impairment, and lease accounting are explicitly deferred.
+
 ## Loan formula reference
 
 Loan inputs and outputs remain currency-neutral canonical decimal strings. All authoritative money, rate, interest, power, payment, balance, and aggregation operations use `ProjectSetuDecimal`. Native numbers are used only for validated integer period counts, loop indices, and projection-year grouping.
@@ -318,8 +365,8 @@ Loan inputs and outputs remain currency-neutral canonical decimal strings. All a
 
 ## Typed calculation failures
 
-`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid loan principal/rates/periods, moratorium inconsistencies, and unsupported loan method/frequency configurations. Decimal syntax remains enforced by the canonical constructors.
+`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid depreciation costs/residuals/additions/lives/rates/years or method configurations, invalid loan principal/rates/periods, moratorium inconsistencies, and unsupported loan method/frequency configurations. Decimal syntax remains enforced by the canonical constructors.
 
 ## Future calculations
 
-Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff policies, depreciation, interest integration, tax, P&L/cash-flow/balance-sheet statements, subsidy, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, sensitivity recalculation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.
+Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff policies, statutory/tax depreciation, partial-year depreciation, acquisitions/disposals, revaluation, impairment, lease accounting, interest integration, tax, P&L/cash-flow/balance-sheet statements, subsidy, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, sensitivity recalculation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.
