@@ -709,7 +709,7 @@ The program engine evaluates already-versioned definitions; it does not fetch, i
 
 All monetary aggregation, percentages, caps, per-unit multiplication, proportional allocations, shortfalls, and cost-limit comparisons use `ProjectSetuDecimal` without intermediate rounding. Compatibility is not arithmetic permission: absent program/version convergence rules yield `UNKNOWN`, manual review, and a conflict. Same-cost assistance is accepted only under the configured policy; otherwise the allocation ledger reports double funding, benefit incompatibility, or overlapping bases. `selectedPrograms = []` bypasses scheme evaluation and returns normal `BANKABLE_PROJECT` mode.
 
-See [Scheme, program, and assistance engine](scheme-engine.md) for versioning, provenance, facts, rule semantics, release models, lifecycle behavior, update workflow, and deferred live-program rules.
+See [Scheme, program, and assistance engine](scheme-engine.md) for generic versioning, provenance, facts, rule semantics, release models, lifecycle behavior, and update workflow. See [PMEGP versioned program definitions](pmegp-program.md) for the independent new-enterprise/upgradation formulas and limits. PMEGP consumes normalized costs and reports constraints; it does not alter any core financial-engine result.
 
 ## Typed calculation failures
 
