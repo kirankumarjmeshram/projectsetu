@@ -1,0 +1,45 @@
+import type {
+  PmfmeActivityClassification,
+  PmfmeComponent,
+  PmfmeEntityType,
+} from "./contracts";
+
+export const PMFME_INELIGIBLE_ACTIVITIES: readonly PmfmeActivityClassification[] =
+  [
+    "TRADING_UNPROCESSED_MILLETS_CEREALS_SPICES",
+    "UNPROCESSED_OR_LOOSE_MILK",
+    "TRADING_FRUITS_VEGETABLES",
+    "TRADING_UNPROCESSED_MINOR_FOREST_PRODUCT",
+    "BEEKEEPING_OR_LOOSE_HONEY",
+    "LOOSE_OIL_TRADING_OR_REPACKING",
+    "TRADING_GROUNDNUT_OR_ARECANUT",
+    "ANIMAL_REARING",
+    "TRADING_FRESH_FISH_MEAT_CHICKEN",
+    "REPACKING_MANUFACTURED_PRODUCTS",
+    "FOOD_SERVICE_ENTERPRISE",
+  ];
+
+export const PMFME_COMPONENT_ENTITIES: Readonly<
+  Record<PmfmeComponent, readonly PmfmeEntityType[]>
+> = {
+  INDIVIDUAL_UNIT: [
+    "INDIVIDUAL",
+    "PROPRIETORSHIP",
+    "PARTNERSHIP",
+    "FPO",
+    "NGO",
+    "COOPERATIVE",
+    "SHG",
+    "PRIVATE_LIMITED_COMPANY",
+  ],
+  GROUP_CAPITAL_SUPPORT: ["FPO", "FPC", "COOPERATIVE", "SHG", "SHG_FEDERATION"],
+  COMMON_INFRASTRUCTURE: [
+    "FPO",
+    "FPC",
+    "COOPERATIVE",
+    "SHG",
+    "SHG_FEDERATION",
+    "GOVERNMENT_AGENCY",
+  ],
+  SHG_SEED_CAPITAL: ["SHG", "SHG_FEDERATION"],
+};

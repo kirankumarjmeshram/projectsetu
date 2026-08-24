@@ -2,7 +2,7 @@
 
 ## Status and boundary
 
-Task 013 implements the generic, versioned Scheme / Government Assistance / Credit Program Engine foundation. Task 014 adds authoritative PMEGP definitions as a dedicated registration module; it adds no PMEGP branch to generic evaluators. NLM, PMFME, CMEGP, AIF, AHIDF, Stand-Up India, state-scheme, and district-scheme rules remain absent. Generic tests continue to use `TEST.*` and `CUSTOM.*` definitions.
+Task 013 implements the generic, versioned Scheme / Government Assistance / Credit Program Engine foundation. Task 014 adds authoritative PMEGP definitions. Task 015 adds separate NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP registration modules. None adds a live-program branch to generic evaluators. AIF is represented only by the official PMFME convergence relationship; a full AIF program, AHIDF, Stand-Up India, other state schemes, and district schemes remain absent. Generic tests continue to use `TEST.*` and `CUSTOM.*` definitions.
 
 The module is pure domain logic. It has no UI, database, network, portal, document-processing, AI, sanction, claim, or disbursement dependency. Existing project-cost, financing, loan, projection, statement, metrics, and investment-return engines remain authoritative and scheme-agnostic. Program evaluation returns constraints and calculated expected entitlements; it never mutates financing or claims that assistance was sanctioned, released, received, or adjusted.
 
@@ -101,4 +101,4 @@ Retired definitions remain explicitly resolvable for historical reports but are 
 
 ## Deferred
 
-Authoritative definitions other than versioned PMEGP new-enterprise and upgradation, recommendation/best-scheme selection, benefit optimization, application workflow, portals/APIs, document requirements, AI extraction, source ingestion, sanction/claim/release/disbursement tracking, accounting recognition, database persistence, UI, and report rendering remain deferred. See [PMEGP versioned program definitions](pmegp-program.md).
+Additional authoritative definitions, recommendation/best-scheme selection, benefit optimization, application workflow, portals/APIs, document requirements, AI extraction, source ingestion, sanction/claim/release/disbursement tracking, accounting recognition, database persistence, UI, and report rendering remain deferred. See the program documents for [PMEGP](pmegp-program.md), [NLM](nlm-program.md), [PMFME](pmfme-program.md), [PMMY/MUDRA](mudra-program.md), and [Maharashtra CMEGP](cmegp-program.md).

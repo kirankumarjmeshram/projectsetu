@@ -2,7 +2,7 @@
 
 ## Status
 
-The repository implements a Next.js application shell, quality tooling, canonical provider-independent TypeScript contracts, deterministic financial engines through investment returns, a generic versioned financing-program engine, and separately registered PMEGP definitions for the 7 December 2023 revised guideline. Product workflows, persistence, other authoritative live government-program rules, lender-policy evaluation, irregular-date returns, WACC, and other advanced financial calculations remain unimplemented.
+The repository implements a Next.js application shell, quality tooling, canonical provider-independent TypeScript contracts, deterministic financial engines through investment returns, a generic versioned financing-program engine, and separately registered PMEGP, NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP definitions. Product workflows, persistence, other authoritative live government-program rules, lender-policy evaluation, irregular-date returns, WACC, and other advanced financial calculations remain unimplemented.
 
 ## Dependency direction
 
@@ -34,5 +34,7 @@ The investment-returns module consumes an explicit equally spaced `0..N` investm
 The schemes module decorates an authoritative bankable project model rather than replacing it. A registry resolves immutable `programId`/`versionId` definitions by evaluation date; pure rule, cost, benefit, funding, compatibility, and allocation evaluators produce traceable outcomes. No selected combination is valid merely because multiple selection is supported: missing convergence rules remain unknown/manual-review states. The module returns constraints and calculated expected assistance without mutating project cost, means of finance, loans, statements, or cash flows.
 
 `domain/schemes/programs/pmegp` is a leaf program module over those generic contracts. New-enterprise and upgradation retain separate program identities, rules, cost limits, rate tables, lifecycle metadata, evaluators, and version snapshots. Core project-cost and financial engines do not import it.
+
+The NLM, PMFME, MUDRA, and CMEGP leaf modules follow the same dependency direction. NLM keeps activity-specific definitions and overlays the verified 2026 amendment on its 2025 base guideline. PMFME separates unit, group, common-infrastructure, and seed-capital components and registers only official AIF convergence metadata. MUDRA is credit-only. CMEGP uses its Maharashtra GR matrix and retains unverified cost/activity details as manual review. The shared programs index only bootstraps definitions into the unchanged registry.
 
 No database, authentication, object storage, PDF, OCR, AI, or scheme-rule provider has been selected. Decimal arithmetic is established by ADR 0001 without selecting a persistence provider.

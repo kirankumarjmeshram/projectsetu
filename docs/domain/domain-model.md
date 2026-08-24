@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts, financial engines through investment returns, and generic versioned financing-program engine foundation listed below are implemented in `src/domain`. Authoritative live government-program and lender rules, persistence mappings, runtime schemas, UI forms, report rendering, irregular-date/advanced return metrics, and provider integrations are not implemented.
+The TypeScript contracts, financial engines through investment returns, generic versioned financing-program engine foundation, and independent PMEGP/NLM/PMFME/PMMY/CMEGP definitions listed below are implemented in `src/domain`. Other authoritative live government-program and lender rules, persistence mappings, runtime schemas, UI forms, report rendering, irregular-date/advanced return metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -213,4 +213,4 @@ The former placeholder metric result contracts have been superseded by the dedic
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, advanced interest-accounting treatment, advanced/irregular-date investment returns, lender-policy evaluation, and sensitivity. PMEGP new-enterprise and upgradation are now explicit source-backed program definitions; other authoritative live-program configurations, recommendation/optimization, sanction/release/accounting integration, and scheme source-ingestion remain deferred. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, detailed accounting subledgers, acquisitions/disposals, impairment, revaluation, and lease accounting also remain deferred.
+Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, advanced interest-accounting treatment, advanced/irregular-date investment returns, lender-policy evaluation, and sensitivity. PMEGP, NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP are explicit source-backed program definitions; other authoritative live-program configurations, recommendation/optimization, sanction/release/accounting integration, and scheme source-ingestion remain deferred. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, detailed accounting subledgers, acquisitions/disposals, impairment, revaluation, and lease accounting also remain deferred.
