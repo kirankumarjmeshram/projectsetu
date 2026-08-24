@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, projected profit-and-loss engine, and indirect-method cash-flow engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, balance-sheet generation, advanced metrics, and provider integrations are not implemented.
+The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, projected profit-and-loss engine, indirect-method cash-flow engine, and projected balance-sheet engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, advanced metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -115,7 +115,29 @@ Promoter contribution and loan disbursement are financing inflows; principal rep
 
 Composition is strict by default. Project ids must match, the P&L `1..N` timeline must be sequential, source years must be valid and unique, extra source years fail, and every source must supply each required year. A missing source becomes zero only through its explicit `USE_EXPLICIT_ZERO` policy; a supplied numeric zero remains authoritative present data. Projection-year sequencing is a current ProjectSetu composition convention, not a statutory accounting rule, and future calendar or fiscal labels can be mapped without changing the formulas.
 
-All calculations and reconciliations use `ProjectSetuDecimal` without intermediate rounding. A negative closing cash balance remains valid and never creates an overdraft, additional loan, promoter contribution, or other balancing finance. Only the indirect method is implemented. Direct-method receipts/payments, collection and payment timing, GST, statutory tax timing, deferred taxes, dividends, disposals, leases, automatic overdrafts/revolving credit, working-capital drawdowns, subsidy cash flows and PMEGP/NLM/PMFME behavior, DSCR, IRR, NPV, balance sheet, and lender-specific formats remain deferred.
+All calculations and reconciliations use `ProjectSetuDecimal` without intermediate rounding. A negative closing cash balance remains valid and never creates an overdraft, additional loan, promoter contribution, or other balancing finance. Only the indirect method is implemented. Balance-sheet mapping remains outside the cash-flow module. Direct-method receipts/payments, collection and payment timing, GST, statutory tax timing, deferred taxes, dividends, disposals, leases, automatic overdrafts/revolving credit, working-capital drawdowns, subsidy cash flows and PMEGP/NLM/PMFME behavior, DSCR, IRR, NPV, and lender-specific formats remain deferred.
+
+## Projected balance sheet
+
+`BalanceSheetYearInput` is a normalized closing-balance boundary. It accepts authoritative gross fixed assets and accumulated depreciation; inventory, receivables, other current assets, and non-negative cash; explicitly classified long-term and current debt; payables and other current liabilities; promoter capital; authoritative PAT; retained-earnings adjustments; and other equity. It deliberately excludes derived net fixed assets, totals, and any balancing account. `BalanceSheetProjectionInput` adds project identity and a source-backed opening retained-earnings balance.
+
+Every `BalanceSheetYear` is an independent point-in-time closing financial position, unlike the period flows in P&L and cash flow. The schedule therefore exposes no cumulative total assets, cash, loan, fixed-assets, liabilities, or equity across years. The engine calculates `net fixed assets = gross fixed assets - accumulated depreciation`, `total current assets = inventory + receivables + other current assets + cash and bank`, `total assets = net fixed assets + total current assets`, `total liabilities = long-term loan + current debt + payables + other current liabilities`, and `total equity = promoter capital + closing retained earnings + other equity`.
+
+Retained earnings follow `closing = opening + PAT + explicit adjustments`; each following opening equals the previous closing exactly. Opening retained earnings is source-backed and never defaults to zero. PAT is copied from P&L and never recalculated. Negative PAT, retained earnings, other equity, and total equity are valid. Dividends and distributions are not inferred; they remain deferred unless explicitly normalized as a generic retained-earnings adjustment.
+
+Promoter capital is a balance, not income or expense. The financing adapter rolls explicit yearly promoter contributions into closing promoter capital using `closing = opening + contribution`, with exact year-to-year continuity. Loan disbursement is not promoter capital. Opening promoter capital is source-backed, and neither the adapter nor the statement derives capital from the balance difference.
+
+Fixed-asset composition copies the Depreciation Engine's closing gross assets and accumulated depreciation, verifies their exact reconciliation to closing net carrying value, and never treats annual depreciation expense as an asset. Cash composition copies `CashFlowSchedule.closingCash` without recalculation. Non-negative closing cash maps to `cashAndBank`; negative closing cash fails composition because an explicit financing classification is required. It never creates an overdraft, loan, promoter contribution, or balancing liability.
+
+The loan adapter copies only authoritative closing principal into an unclassified total-loan schedule. Current/non-current maturity classification remains an explicit, source-backed accounting input because the Loan Engine does not provide that classification. Composition requires `long-term loan outstanding + current debt = authoritative total closing principal`, preventing the same principal from being counted in both categories. Principal repayment, interest expense/payment, accrued unpaid interest, and capitalized-interest fields are never independently added to the liability. Multiple-loan and accrued-interest-liability accounting remain upstream or deferred.
+
+Inventory, receivables, payables, other current balances, debt classification, retained-earnings adjustments, and other equity use explicit source-backed accounting schedules. The Working Capital Engine's financing requirement or gap is not assumed to equal inventory, total current assets, net working capital, receivables, or payables. Only a future adapter with explicit semantic equivalence may map those balances.
+
+The exact reconciliation is `balance difference = total assets - total liabilities - total equity`; `isBalanced` is true only when the Decimal.js result is exactly zero. Valid but inconsistent balances return a successful row with a non-zero difference and `isBalanced = false`. No cash, reserve, asset, liability, equity, overdraft, suspense, miscellaneous, or plug account is ever created to force balance.
+
+Composition uses P&L projection years `1..N` as the timeline. Project ids must match; invalid, duplicate, extra, missing, and non-sequential years fail. Strict mode requires every normalized source. Only an explicitly selected `USE_EXPLICIT_ZERO` policy converts a missing source row to zero; supplied numeric zero remains present authoritative data. The `1..N` rule is a ProjectSetu projection convention, not statutory presentation, and future calendar/fiscal labels may be mapped without changing calculations.
+
+All balance-sheet arithmetic uses `ProjectSetuDecimal` with no intermediate or tolerance rounding. Statutory formats, subsidies and scheme accounting, tax/GST balances, detailed ageing/inventory, disposals, revaluation, impairment, leases, dividends, drawings, automatic overdraft/financing, consolidation, lender presentation, metrics, DSCR, IRR, and NPV remain deferred.
 
 ## Other financial assumptions
 
@@ -125,7 +147,7 @@ This general financial-assumption contract is not the depreciation calculation i
 
 ## Other financial statements and metrics
 
-`ProjectedBalanceSheet` remains a multi-year placeholder result contract; it does not calculate or reconcile values. The former placeholder cash-flow result has been superseded by the dedicated `CashFlowSchedule` calculation contract, as the earlier P&L placeholder was superseded by `ProfitAndLossSchedule`.
+The former placeholder financial-statement contracts have been superseded by the dedicated `ProfitAndLossSchedule`, `CashFlowSchedule`, and `BalanceSheetSchedule` calculation contracts.
 
 Metric result contracts cover break-even, year-wise and average DSCR, project/equity IRR, NPV with its discount rate, ROI, payback, and common financial ratios. No formula or target threshold is implemented.
 
@@ -143,4 +165,4 @@ Metric result contracts cover break-even, year-wise and average DSCR, project/eq
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, advanced interest-accounting treatment, balance sheet, metrics, ratios, and sensitivity. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, monthly or day-count timing, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, advanced interest-accounting treatment, metrics, ratios, and sensitivity. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, monthly or day-count timing, detailed accounting subledgers, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.

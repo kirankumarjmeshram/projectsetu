@@ -1,3 +1,4 @@
+import type { BalanceSheetSchedule } from "../balance-sheet/balance-sheet";
 import type { CashFlowSchedule } from "../cash-flow/cash-flow";
 import type { FinancialMetricResults } from "../financials/metrics";
 import type { ProfitAndLossSchedule } from "../profit-and-loss/profit-and-loss";
@@ -30,6 +31,7 @@ export interface SensitivityResult {
   readonly scenarioId: Identifier;
   readonly profitAndLoss?: ProfitAndLossSchedule;
   readonly cashFlow?: CashFlowSchedule;
+  readonly balanceSheet?: BalanceSheetSchedule;
   readonly metrics?: FinancialMetricResults;
   readonly repaymentCapacity?: string;
 }
