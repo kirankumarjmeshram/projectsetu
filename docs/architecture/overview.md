@@ -2,7 +2,7 @@
 
 ## Status
 
-The repository implements a Next.js application shell, a development landing page, quality tooling, canonical provider-independent TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, a deterministic term-loan repayment engine, a revenue/operating-expense projection engine, an asset-wise depreciation engine, projected profit-and-loss, cash-flow, and balance-sheet composition engines, a financial-ratios and bankability-metrics engine, and an investment-returns engine described in [the domain model](../domain/domain-model.md). Product workflows, persistence, lender-policy evaluation, irregular-date returns, WACC, and other advanced financial calculations remain unimplemented.
+The repository implements a Next.js application shell, quality tooling, canonical provider-independent TypeScript contracts, deterministic financial engines through investment returns, and a generic versioned financing-program engine foundation described in [the domain model](../domain/domain-model.md). Product workflows, persistence, authoritative live government-program rules, lender-policy evaluation, irregular-date returns, WACC, and other advanced financial calculations remain unimplemented.
 
 ## Dependency direction
 
@@ -30,5 +30,7 @@ The balance-sheet module composes point-in-time closing balances from authoritat
 The metrics module consumes explicit normalized P&L, loan-principal, balance-sheet, project-cost, and fixed/variable cost-classification outputs. It calculates only named ratios and their formula components, uses explicit undefined states instead of zero, NaN, or Infinity when a denominator is invalid, and contains no lender approval threshold, scheme rule, UI, persistence, IRR, or NPV dependency.
 
 The investment-returns module consumes an explicit equally spaced `0..N` investment cash-flow series tagged as project or equity return. Its project adapter composes only source-backed project investment, operating cash generation, working-capital investment/recovery, capex, terminal value, and other explicit project flows; financing and accounting-profit fields are forbidden. NPV evaluation, discounted schedules, payback interpolation, PI, and IRR root evaluation use Decimal.js. Bounded bracket expansion and bisection use native integers only for loop control. The module imports no UI, persistence, scheme, subsidy, lender-threshold, P&L, balance-sheet, or financing schedule.
+
+The schemes module decorates an authoritative bankable project model rather than replacing it. A registry resolves immutable `programId`/`versionId` definitions by evaluation date; pure rule, cost, benefit, funding, compatibility, and allocation evaluators produce traceable outcomes. No selected combination is valid merely because multiple selection is supported: missing convergence rules remain unknown/manual-review states. The module returns constraints and calculated expected assistance without mutating project cost, means of finance, loans, statements, or cash flows.
 
 No database, authentication, object storage, PDF, OCR, AI, or scheme-rule provider has been selected. Decimal arithmetic is established by ADR 0001 without selecting a persistence provider.

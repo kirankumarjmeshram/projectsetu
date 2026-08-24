@@ -1,3 +1,3 @@
 # Scheme domain
 
-Versioned, source-backed scheme vocabulary and project participation contracts are implemented in this module. No government scheme rules, percentages, ceilings, or eligibility logic are implemented.
+Generic versioned financing-program contracts, registry, rule evaluation, cost eligibility, benefit calculation, funding constraints, compatibility, and allocation-ledger validation live here. Only `TEST.*` fixtures are present; authoritative live government-program rules remain deferred.

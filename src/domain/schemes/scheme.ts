@@ -5,8 +5,9 @@ export const schemeVersionStatuses = [
   "DRAFT",
   "ACTIVE",
   "SUPERSEDED",
-  "WITHDRAWN",
-  "UNVERIFIED",
+  "RETIRED",
+  "SUSPENDED",
+  "ARCHIVED",
 ] as const;
 export type SchemeVersionStatus = (typeof schemeVersionStatuses)[number];
 

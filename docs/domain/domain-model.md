@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, projected profit-and-loss engine, indirect-method cash-flow engine, projected balance-sheet engine, financial-ratios and bankability-metrics engine, and investment-returns engine listed below are implemented in `src/domain`. Scheme and lender rules, persistence mappings, runtime schemas, UI forms, report rendering, irregular-date/advanced return metrics, and provider integrations are not implemented.
+The TypeScript contracts, financial engines through investment returns, and generic versioned financing-program engine foundation listed below are implemented in `src/domain`. Authoritative live government-program and lender rules, persistence mappings, runtime schemas, UI forms, report rendering, irregular-date/advanced return metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -73,9 +73,17 @@ Positive principal requires at least one post-moratorium amortization period. Ze
 
 ## Subsidy and schemes
 
-`Scheme`, `SchemeVersion`, and `SchemeSource` provide explicit version, effective dates, implementing bodies, lifecycle status, primary sources, verification date, and conditions.
+`FinancingProgramDefinition` generalizes schemes into credit, subsidy, interest-subvention, guarantee, grant, reimbursement, seed-capital, composite, base-finance, and custom programs. Stable validated `ProgramId` values are open namespaced strings rather than a closed list of schemes. Every immutable definition has a version id, effective period, lifecycle status, jurisdiction, provenance, normalized eligibility/cost rules, benefits, and financing constraints.
 
-`ProjectCostEligibilitySummary` separates total, eligible, and ineligible project cost. `SubsidyAssessment` can represent a rate, ceiling, calculated and admissible amounts, beneficiary contribution, bank finance, release mechanism, lock-in, conditions, and provenance. All fields are neutral to scheme behavior; no eligibility rule or subsidy formula exists.
+`FinancingProgramRegistry` rejects replacement of an existing program/version, resolves the applicable historical version by as-of date, retains retired and superseded versions for explicit historical evaluation, and lists only currently active definitions for new selection. `ProgramEvaluationSnapshot` persists the exact program id, version id, and evaluation date.
+
+Rules query normalized applicant, project, enterprise, location, activity, financing, and custom facts. Missing facts produce `UNKNOWN` and `INSUFFICIENT_INFORMATION`, not false or zero. Composite `ALL`/`ANY`/`NONE` results retain rule identity, actual fact, explanation code, and source references. Explicit pure-function handlers extend unusual programs without expression strings or infrastructure calls.
+
+`SchemeCostItem` is a normalized authoritative cost boundary. Cost rules include/exclude categories and tags or apply percentage/absolute caps. Line results support eligible, partially eligible, ineligible, and manual-review states while exactly reconciling eligible and ineligible amounts. Financial benefits support percentage, fixed, per-unit, and custom calculations across total/eligible/capital/specific cost, bank-finance, contribution, or custom bases. Benefit traces retain basis, rate, raw amount, caps, and `calculatedEligibleBenefit`; they never represent sanctioned or released subsidy.
+
+Contribution and bank-finance results are constraints only and never mutate the Financing Engine. Release mechanisms and installments describe expected timing but do not automate claims. `ProgramSelection[]` and `ProgramStackEvaluation` support zero, one, or multiple selections. Empty selection is permanent `BANKABLE_PROJECT` mode. Versioned convergence rules decide program- and benefit-level compatibility; no rule means `UNKNOWN`, manual review, and a conflict rather than implicit permission. The allocation ledger detects same-cost double funding, overlapping portions, incompatible benefit kinds, and configured cost-limit breaches.
+
+Only generic `TEST.*` fixtures exist. See [Scheme, program, and assistance engine](scheme-engine.md) for the complete architecture and deferred live-program workflow.
 
 ## Depreciation
 
@@ -205,4 +213,4 @@ The former placeholder metric result contracts have been superseded by the dedic
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, advanced interest-accounting treatment, advanced/irregular-date investment returns, lender-policy evaluation, and sensitivity. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, monthly or day-count timing, detailed accounting subledgers, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, advanced interest-accounting treatment, advanced/irregular-date investment returns, lender-policy evaluation, and sensitivity. Authoritative live-program configurations, recommendation/optimization, sanction/release/accounting integration, and scheme source-ingestion remain deferred. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, detailed accounting subledgers, acquisitions/disposals, impairment, revaluation, and lease accounting also remain deferred.
