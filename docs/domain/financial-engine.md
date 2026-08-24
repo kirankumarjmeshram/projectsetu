@@ -2,7 +2,7 @@
 
 ## Status
 
-The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, and projected profit-and-loss engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. The depreciation engine adds Straight Line and Written Down Value schedules from explicit per-asset assumptions. The P&L engine composes normalized authoritative flows into EBITDA, EBIT, profit before tax, generic tax, and profit after tax. No rates or business defaults are embedded.
+The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, projected profit-and-loss engine, and indirect-method cash-flow engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. The depreciation engine adds Straight Line and Written Down Value schedules from explicit per-asset assumptions. The P&L engine composes normalized authoritative flows into EBITDA, EBIT, profit before tax, generic tax, and profit after tax. The cash-flow engine composes authoritative cash-impacting values into operating, investing, and financing cash flows, exact balance continuity, and cumulative movement totals. No rates or business defaults are embedded.
 
 All financial calculations must be deterministic domain logic. AI may later explain or narrate validated results, but it must never be the source of truth for project cost, promoter contribution, subsidy, bank finance, interest, depreciation, profitability, DSCR, IRR, NPV, break-even, or loan repayment.
 
@@ -25,7 +25,8 @@ Authoritative financial calculations must use the configured `decimal.js` primit
 - Revenue and operating-expense projection assumptions, yearly overrides, calculated lines, grouped totals, and pre-depreciation/interest/tax operating surplus
 - Source-backed asset depreciation inputs, additions, per-asset schedules, and aggregate yearly summaries
 - Normalized projected P&L inputs, generic tax assumptions, yearly rows, cumulative flow totals, and strict composition policy
-- Projected cash-flow and balance-sheet result shapes
+- Normalized cash-flow inputs, strict composition policy, yearly indirect-method rows, and cumulative cash-flow totals
+- Projected balance-sheet result shape
 - Break-even, DSCR, IRR, NPV, ROI, payback, and ratio result shapes
 - General sensitivity scenarios and their result shape
 - Branded decimal, money, and percentage strings with strict constructors
@@ -90,6 +91,9 @@ Display formatting is independent. Canonical domain values never contain the INR
 | `calculateDepreciationSchedule`, `summarizeDepreciationByYear`                                          | `src/domain/depreciation/calculations.ts`    | Implemented | Aggregation identity                                             | Exact sums of canonical asset/year depreciation rows                                   | `src/domain/depreciation/calculations.test.ts`    |
 | `calculatePercentageOfPositiveProfitBeforeTax`, `calculateProjectedProfitAndLoss`                       | `src/domain/profit-and-loss/calculations.ts` | Implemented | Arithmetic identities and explicit generic tax convention        | Normalized authoritative flows and source-backed tax configuration                     | `src/domain/profit-and-loss/calculations.test.ts` |
 | `composeProfitAndLossYearInputs`, `calculateProfitAndLossFromAuthoritativeSchedules`                    | `src/domain/profit-and-loss/calculations.ts` | Implemented | Strict composition and year-alignment convention                 | Projection totals, annual depreciation, and explicitly normalized interest expense     | `src/domain/profit-and-loss/calculations.test.ts` |
+| `calculateOperatingCashFlow`, `calculateInvestingCashFlow`, `calculateFinancingCashFlow`                | `src/domain/cash-flow/calculations.ts`       | Implemented | Arithmetic identities and documented cash-classification rules   | Normalized PAT, depreciation, NWC change, capex, financing, and cash loan payments     | `src/domain/cash-flow/calculations.test.ts`       |
+| `calculateCashFlowSchedule`                                                                             | `src/domain/cash-flow/calculations.ts`       | Implemented | Arithmetic identities and exact balance-continuity convention    | Explicit opening cash and normalized sequential yearly cash-impacting values           | `src/domain/cash-flow/calculations.test.ts`       |
+| `composeCashFlowYearInputs`, `calculateCashFlowFromAuthoritativeSchedules`                              | `src/domain/cash-flow/adapters.ts`           | Implemented | Strict composition and year-alignment convention                 | P&L, working-capital changes, cash capex, financing inflows, and loan cash payments    | `src/domain/cash-flow/calculations.test.ts`       |
 
 ## Phase 1 formula reference
 
@@ -419,10 +423,73 @@ The P&L module is a composition/calculation engine, not another source of revenu
 - **Rounding:** no intermediate or summary rounding.
 - **Limitations:** margins are deferred; zero-revenue years therefore do not receive an invented 0% margin. No opening/closing balance-sheet values are summed.
 
+## Projected cash-flow formula reference
+
+The cash-flow module is a composition engine, not a second source of revenue, operating expenses, PAT, depreciation, loan principal, loan interest, working-capital requirements, project cost, or financing amounts. Its normalized path is `P&L PAT and depreciation + signed NWC change + cash capex + explicit financing inflows + loan principal and cash-interest payments -> CashFlowYearInput -> indirect-method cash-flow schedule`. It imports no UI, database, provider, scheme, subsidy, balance-sheet, or viability-metric code.
+
+### Authoritative input and integration boundary
+
+- **Purpose:** convert independently owned upstream values into one cash-impacting yearly contract without duplicating their formulas.
+- **Inputs:** sequential normalized rows containing PAT, depreciation, signed change in NWC, capital expenditure, promoter contribution, loan disbursement, principal repayment, and cash interest paid, plus a source-backed initial opening cash balance.
+- **Algorithm:** P&L contributes only PAT and depreciation. Tax is not subtracted again, depreciation is added back exactly once, and no operating expense is separately added back. The working-capital adapter calculates `current requirement - opening/previous requirement`; Year 1 requires a source-backed opening NWC and later years use the immediately preceding authoritative balance. The depreciation adapter maps each annual additions total once when the caller opts to treat it as cash purchases; it never derives capex from depreciation, gross assets, WDV, accumulated depreciation, or carrying value. The loan adapter maps only annual principal repaid and interest paid. Explicit financing rows supply promoter contribution and disbursement rather than inferring them from project cost.
+- **Result:** `CashFlowYearInput` rows and a `CashFlowSchedule` that preserve every authoritative source value used in the cash calculation.
+- **Rounding:** none.
+- **Assumptions:** PAT already includes P&L tax. Task 009 assumes tax expense equals cash tax paid, so tax is not subtracted again. Startup/original asset purchases and non-cash acquisitions require explicit upstream normalization rather than being inferred from depreciation schedules. The upstream composition owner must prevent duplicate recognition when a depreciation addition and another normalized project-capex source describe the same purchase.
+- **Limitations:** the engine does not choose whether a transaction occurred in cash, deduplicate capex sources, or recompute an upstream amount. Timing, identity, deduplication, and classification decisions remain with the authoritative normalization layer.
+
+### Operating cash flow and signed NWC
+
+- **Purpose:** derive initial indirect-method operating cash flow without reconstructing customer or supplier cash receipts and payments.
+- **Inputs:** authoritative PAT, non-negative depreciation, and signed change in net working capital.
+- **Formula/algorithm:** `operating cash flow = PAT + depreciation - change in NWC`, where `change in NWC = current-year NWC - prior-year NWC`.
+- **Result:** a positive NWC change reduces cash; a negative change releases cash and increases operating cash flow. Depreciation is added back exactly once because it is non-cash.
+- **Rounding:** none.
+- **Assumptions:** Year 1 compares the first authoritative NWC requirement with the value of an explicit source-backed opening NWC assumption. Opening NWC is never inferred or defaulted. Every later year subtracts the immediately preceding authoritative requirement. An opening NWC of zero and Year 1 requirement of `500000` therefore produces change in NWC of `500000` and cash effect of `-500000`.
+- **Limitations:** no other operating adjustment, deferred-tax/payable timing adjustment, receivable collection schedule, supplier payment schedule, inventory-purchase timing, GST cash flow, dividend, or direct-method statement.
+
+### Investing cash flow
+
+- **Purpose:** present actual normalized asset purchases/additions as cash investment.
+- **Inputs:** non-negative cash capital expenditure.
+- **Formula/algorithm:** `investing cash flow = -capital expenditure`.
+- **Result:** capex is an investing outflow; zero capex produces zero investing cash flow.
+- **Rounding:** none.
+- **Assumptions:** the amount has already been identified upstream as an actual cash purchase/addition.
+- **Limitations:** depreciation and asset book values are never cash flows. Asset disposals, sale proceeds, acquisitions, leases, and non-cash asset transactions are deferred.
+
+### Financing cash flow and loan-payment boundary
+
+- **Purpose:** separate source-backed finance inflows and actual debt cash payments from accounting expense and balance measures.
+- **Inputs:** non-negative promoter/equity contribution, loan disbursement, principal repayment, and cash interest paid.
+- **Formula/algorithm:** `financing cash flow = promoter contribution + loan disbursement - principal repayment - cash interest paid`.
+- **Result:** principal repayment is a financing cash outflow only, never a P&L expense. Only explicitly normalized cash interest paid is an interest cash outflow.
+- **Rounding:** none.
+- **Assumptions:** annual loan `interestPaid` is an authoritative cash payment. The normalized loan-payment contract forbids interest charged, accrued interest, capitalized interest, total debt service, disbursement, and closing principal so those fields cannot be silently substituted. Classifying cash interest paid in financing is the current ProjectSetu reporting convention; a future explicitly configured presentation may classify it differently without changing the cash-paid boundary.
+- **Limitations:** charged but unpaid, accrued unpaid, and capitalized interest are non-cash in the period unless another authoritative layer explicitly records a payment. Automatic overdrafts, revolving credit, working-capital loan draws, and scheme/subsidy financing are deferred.
+
+### Net movement, balance continuity, and cumulative totals
+
+- **Purpose:** reconcile cash sections into yearly balances without inventing financing for a deficit.
+- **Inputs:** explicit source-backed initial opening cash plus calculated operating, investing, and financing cash flow.
+- **Formula/algorithm:** `net cash movement = operating + investing + financing`; `closing cash = opening cash + net cash movement`; each next-year opening is the prior closing. Cumulative section and net totals are exact sums of rows to date.
+- **Result:** `closing cash = initial opening cash + cumulative net cash movement` in every year. Cumulative net movement is not confused with closing cash when initial opening cash is non-zero.
+- **Rounding:** no intermediate, yearly, or cumulative rounding; all authoritative arithmetic uses `ProjectSetuDecimal`.
+- **Assumptions:** negative opening or closing cash is valid and reports an unmet financing position faithfully. No overdraft, additional loan, promoter contribution, or other balancing finance is automatically injected. Cash-flow schedules currently use ProjectSetu projection-year indices `1..N`; sequential validation is a composition convention, not a statutory accounting rule. A future adapter may map calendar or fiscal labels without changing formula semantics.
+- **Limitations:** negative cash is not itself classified as an overdraft, financing gap, or infeasibility conclusion.
+
+### Strict year alignment and explicit zeros
+
+- **Purpose:** prevent missing or misaligned upstream periods from being silently dropped or fabricated.
+- **Inputs:** one project-scoped P&L timeline and project-scoped working-capital-change, capex, financing-inflow, and loan-cash-payment schedules, plus an optional per-source missing-value policy.
+- **Algorithm:** project ids must match. P&L years must be a non-empty sequential `1..N` series. All source years must be positive integers and unique; extra source years fail. Every P&L year requires every normalized source under the default `ERROR` policy. Only an independently selected `USE_EXPLICIT_ZERO` treatment inserts zero for a missing source.
+- **Result:** aligned normalized rows that preserve supplied zeros as present authoritative data. A legitimate numeric zero never triggers missing-value behavior.
+- **Rounding:** none.
+- **Limitations:** one combined row per projection year; subannual timing and multiple-loan/capex-source aggregation remain upstream responsibilities.
+
 ## Typed calculation failures
 
-`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid depreciation costs/residuals/additions/lives/rates/years or method configurations, invalid loan principal/rates/periods, moratorium inconsistencies, invalid or duplicate P&L/source years, missing/misaligned P&L source values, negative authoritative P&L expenses, invalid tax configuration/rates/overrides, and unsupported loan/tax configurations. Decimal syntax remains enforced by the canonical constructors.
+`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid depreciation costs/residuals/additions/lives/rates/years or method configurations, invalid loan principal/rates/periods, moratorium inconsistencies, invalid or duplicate P&L/source years, missing/misaligned P&L source values, negative authoritative P&L expenses, invalid tax configuration/rates/overrides, unsupported loan/tax configurations, missing cash-flow sources/opening cash, invalid or misaligned cash-flow years, project-id mismatches, and negative depreciation, capex, contribution, disbursement, principal repayment, or cash-interest payments. Decimal syntax remains enforced by the canonical constructors. Negative PAT, signed NWC changes, and cash balances remain valid cash-flow values.
 
 ## Future calculations
 
-Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff and expense/capitalization policies, statutory tax and depreciation, tax adjustments, deferred tax, loss carry-forward, tax credits, partial-year depreciation, acquisitions/disposals, revaluation, impairment, lease accounting, P&L presentation extensions, margins, cash-flow/balance-sheet statements, subsidy accounting, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, sensitivity recalculation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.
+Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff and expense/capitalization policies, statutory tax and depreciation, tax adjustments and payment timing, deferred tax, loss carry-forward, tax credits, partial-year depreciation, acquisitions/disposals, revaluation, impairment, lease accounting, P&L presentation extensions, margins, direct-method cash flow, collection/payment/inventory timing, GST cash flow, dividends, overdraft/revolving-credit balancing, working-capital loan draws, balance-sheet statements, subsidy cash flows and accounting, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, sensitivity recalculation, and balance-sheet reconciliation remain deferred. Every future assumption must remain explicit and source-backed.

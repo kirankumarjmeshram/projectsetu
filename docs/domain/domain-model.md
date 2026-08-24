@@ -2,7 +2,7 @@
 
 ## Status
 
-The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, and projected profit-and-loss engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, cash-flow/balance-sheet generation, advanced metrics, and provider integrations are not implemented.
+The TypeScript contracts, Core Financial Engine Phase 1 arithmetic identities, deterministic term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, projected profit-and-loss engine, and indirect-method cash-flow engine listed below are implemented in `src/domain`. Scheme rules, persistence mappings, runtime schemas, UI forms, report rendering, balance-sheet generation, advanced metrics, and provider integrations are not implemented.
 
 ## Shared contracts
 
@@ -101,6 +101,22 @@ P&L schedules currently use ProjectSetu projection-year indices `1..N`. Requirin
 
 All P&L subtraction, percentage tax, and aggregation use `ProjectSetuDecimal` without intermediate rounding. Margins are deferred rather than assigning a misleading zero percentage when revenue is zero.
 
+## Projected cash flow
+
+`CashFlowYearInput` is a normalized cash-impact boundary. Every `1..N` projection row explicitly supplies authoritative PAT, depreciation, signed change in net working capital, capital expenditure, promoter contribution, loan disbursement, principal repayment, and cash interest paid. `CashFlowProjectionInput` adds project identity and a source-backed initial opening cash balance. The module does not recalculate revenue, operating expenses, PAT, depreciation, loan principal, loan interest, working-capital requirements, project cost, or financing assumptions.
+
+`CashFlowYear` separates operating, investing, and financing sections. Operating cash flow is `PAT + depreciation - change in NWC`; investing cash flow is `-capital expenditure`; financing cash flow is `promoter contribution + loan disbursement - principal repayment - cash interest paid`. Net movement is the exact sum of those sections, and closing cash is opening cash plus net movement. Each next-year opening equals the prior closing exactly. Cumulative section and net-movement totals are flow sums; closing cash instead equals initial opening cash plus cumulative net movement.
+
+The NWC sign convention is `current-year NWC - opening/previous-year NWC`. A positive change is cash tied up and therefore an operating outflow; a negative change releases cash. Year 1 is explicit: balance-based normalization requires and retains a source-backed opening NWC assumption, then compares the first requirement with its value. Opening NWC is never inferred and Year 1 change is never assumed to be zero. Every later change subtracts the immediately preceding authoritative NWC balance. Cash balances may become negative and are never automatically balanced with invented finance.
+
+Pure adapters compose existing schedules without copying their formulas. P&L contributes only PAT and depreciation; tax is not deducted again, depreciation is added back once, and no operating expense is separately added back. Working-capital summaries may be converted from absolute requirements to signed changes. Depreciation schedules contribute only explicitly opted-in annual additions as cash capex; original startup assets and non-cash acquisitions require separate normalization, and depreciation expense, accumulated depreciation, and carrying values never become capex. The upstream composition owner must ensure the same purchase/addition is not also supplied through another normalized project-capex schedule. Loan annual summaries contribute only principal repaid and interest paid. Promoter contributions and loan disbursements come from explicit financing schedules and are never inferred from project cost.
+
+Promoter contribution and loan disbursement are financing inflows; principal repayment and cash interest paid are financing outflows. Principal repayment remains separate from interest and is never a P&L expense. Only explicitly normalized cash interest paid is an interest cash outflow; charged, accrued unpaid, or capitalized interest and debt balances are forbidden from the normalized payment contract and are not silently treated as cash. Presenting cash interest in financing is the current ProjectSetu reporting convention and may become configurable if an alternative accounting presentation is added later. PAT already reflects P&L tax, so no second tax deduction occurs. The current assumption is that tax expense and tax paid do not differ; deferred tax and tax-payment timing are deferred.
+
+Composition is strict by default. Project ids must match, the P&L `1..N` timeline must be sequential, source years must be valid and unique, extra source years fail, and every source must supply each required year. A missing source becomes zero only through its explicit `USE_EXPLICIT_ZERO` policy; a supplied numeric zero remains authoritative present data. Projection-year sequencing is a current ProjectSetu composition convention, not a statutory accounting rule, and future calendar or fiscal labels can be mapped without changing the formulas.
+
+All calculations and reconciliations use `ProjectSetuDecimal` without intermediate rounding. A negative closing cash balance remains valid and never creates an overdraft, additional loan, promoter contribution, or other balancing finance. Only the indirect method is implemented. Direct-method receipts/payments, collection and payment timing, GST, statutory tax timing, deferred taxes, dividends, disposals, leases, automatic overdrafts/revolving credit, working-capital drawdowns, subsidy cash flows and PMEGP/NLM/PMFME behavior, DSCR, IRR, NPV, balance sheet, and lender-specific formats remain deferred.
+
 ## Other financial assumptions
 
 `FinancialAssumptions` groups the projection period, explicit capacity utilisation, escalation/inflation, interest, tax, and depreciation assumptions. Each assumption is traceable to a source. Asset-wise `DepreciationAssumption` records category, method, optional rate, and an explicit authority basis so Companies Act or income-tax treatment is never silently selected.
@@ -109,7 +125,7 @@ This general financial-assumption contract is not the depreciation calculation i
 
 ## Other financial statements and metrics
 
-`ProjectedCashFlow` and `ProjectedBalanceSheet` remain multi-year result contracts with explicit line-item vocabulary; they do not calculate or reconcile values. The former placeholder P&L result has been superseded by the dedicated `ProfitAndLossSchedule` calculation contract.
+`ProjectedBalanceSheet` remains a multi-year placeholder result contract; it does not calculate or reconcile values. The former placeholder cash-flow result has been superseded by the dedicated `CashFlowSchedule` calculation contract, as the earlier P&L placeholder was superseded by `ProfitAndLossSchedule`.
 
 Metric result contracts cover break-even, year-wise and average DSCR, project/equity IRR, NPV with its discount rate, ROI, payback, and common financial ratios. No formula or target threshold is implemented.
 
@@ -127,4 +143,4 @@ Metric result contracts cover break-even, year-wise and average DSCR, project/eq
 
 ## Future calculations and validation
 
-Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, advanced interest-accounting treatment, cash flow, balance sheet, metrics, ratios, and sensitivity. Statutory tax, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, monthly or day-count timing, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.
+Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, subsidy, advanced interest-accounting treatment, balance sheet, metrics, ratios, and sensitivity. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, monthly or day-count timing, acquisitions/disposals, impairment, revaluation, and lease accounting remain deferred. Future validations include broader project completeness, balance-sheet reconciliation, and unresolved scheme eligibility. Runtime schema validation remains deferred pending a deliberate library decision.

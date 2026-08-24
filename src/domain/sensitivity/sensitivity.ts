@@ -1,5 +1,5 @@
+import type { CashFlowSchedule } from "../cash-flow/cash-flow";
 import type { FinancialMetricResults } from "../financials/metrics";
-import type { ProjectedCashFlow } from "../financials/statements";
 import type { ProfitAndLossSchedule } from "../profit-and-loss/profit-and-loss";
 import type { DecimalValue, Identifier } from "../shared/types";
 
@@ -29,7 +29,7 @@ export interface SensitivityScenario {
 export interface SensitivityResult {
   readonly scenarioId: Identifier;
   readonly profitAndLoss?: ProfitAndLossSchedule;
-  readonly cashFlow?: ProjectedCashFlow;
+  readonly cashFlow?: CashFlowSchedule;
   readonly metrics?: FinancialMetricResults;
   readonly repaymentCapacity?: string;
 }

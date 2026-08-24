@@ -4,20 +4,6 @@ import type {
   ProjectionYear,
 } from "../shared/types";
 
-export interface ProjectedCashFlowYear {
-  readonly year: ProjectionYear;
-  readonly openingCash: MonetaryAmount;
-  readonly cashInflows: MonetaryAmount;
-  readonly cashOutflows: MonetaryAmount;
-  readonly netCashFlow: MonetaryAmount;
-  readonly closingCash: MonetaryAmount;
-}
-
-export interface ProjectedCashFlow {
-  readonly projectId: Identifier;
-  readonly years: readonly ProjectedCashFlowYear[];
-}
-
 export interface ProjectedBalanceSheetYear {
   readonly year: ProjectionYear;
   readonly capital: MonetaryAmount;
