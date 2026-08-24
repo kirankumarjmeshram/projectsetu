@@ -1,6 +1,6 @@
 import type { BalanceSheetSchedule } from "../balance-sheet/balance-sheet";
 import type { CashFlowSchedule } from "../cash-flow/cash-flow";
-import type { FinancialMetricResults } from "../financials/metrics";
+import type { FinancialMetricResults } from "../metrics/metrics";
 import type { ProfitAndLossSchedule } from "../profit-and-loss/profit-and-loss";
 import type { DecimalValue, Identifier } from "../shared/types";
 

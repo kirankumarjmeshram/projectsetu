@@ -50,6 +50,7 @@ export interface BalanceSheetYear {
   readonly currentDebt: MonetaryAmount;
   readonly payables: MonetaryAmount;
   readonly otherCurrentLiabilities: MonetaryAmount;
+  readonly totalCurrentLiabilities: MonetaryAmount;
   readonly totalLiabilities: MonetaryAmount;
   readonly promoterCapital: MonetaryAmount;
   readonly openingRetainedEarnings: MonetaryAmount;

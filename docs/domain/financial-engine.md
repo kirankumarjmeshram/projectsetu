@@ -2,7 +2,7 @@
 
 ## Status
 
-The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, projected profit-and-loss engine, indirect-method cash-flow engine, and projected balance-sheet engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. The depreciation engine adds Straight Line and Written Down Value schedules from explicit per-asset assumptions. The P&L engine composes normalized authoritative flows into EBITDA, EBIT, profit before tax, generic tax, and profit after tax. The cash-flow engine composes authoritative cash-impacting values into operating, investing, and financing cash flows, exact balance continuity, and cumulative movement totals. The balance-sheet engine composes authoritative point-in-time assets, liabilities, and equity, exposes exact reconciliation, and never auto-balances. No rates or business defaults are embedded.
+The decimal-safe arithmetic foundation, Core Financial Engine Phase 1, reusable term-loan repayment engine, revenue/operating-expense projection engine, asset-wise depreciation engine, projected profit-and-loss engine, indirect-method cash-flow engine, projected balance-sheet engine, and financial-ratios and bankability-metrics engine are implemented. Phase 1 covers project cost, explicit single-year revenue and expense aggregation, escalation, means of finance, reconciliation, and core working capital. The projection engine adds deterministic multi-year quantity, capacity, selling-price, revenue, expense, and operating-surplus calculations. The depreciation engine adds Straight Line and Written Down Value schedules from explicit per-asset assumptions. The P&L engine composes normalized authoritative flows into EBITDA, EBIT, profit before tax, generic tax, and profit after tax. The cash-flow engine composes authoritative cash-impacting values into operating, investing, and financing cash flows, exact balance continuity, and cumulative movement totals. The balance-sheet engine composes authoritative point-in-time assets, liabilities, and equity, exposes exact reconciliation, and never auto-balances. The metrics engine consumes these authoritative outputs to calculate named DSCR, coverage, leverage, liquidity, break-even, return, and margin metrics without lender thresholds. No rates or business defaults are embedded.
 
 All financial calculations must be deterministic domain logic. AI may later explain or narrate validated results, but it must never be the source of truth for project cost, promoter contribution, subsidy, bank finance, interest, depreciation, profitability, DSCR, IRR, NPV, break-even, or loan repayment.
 
@@ -27,7 +27,7 @@ Authoritative financial calculations must use the configured `decimal.js` primit
 - Normalized projected P&L inputs, generic tax assumptions, yearly rows, cumulative flow totals, and strict composition policy
 - Normalized cash-flow inputs, strict composition policy, yearly indirect-method rows, and cumulative cash-flow totals
 - Normalized balance-sheet inputs, point-in-time yearly results, source-backed accounting balances, retained-earnings and promoter-capital roll-forwards, strict composition policy, and exact reconciliation
-- Break-even, DSCR, IRR, NPV, ROI, payback, and ratio result shapes
+- Normalized yearly metrics inputs, deterministic defined/undefined metric results, weighted Average DSCR, and strict authoritative-source adapters
 - General sensitivity scenarios and their result shape
 - Branded decimal, money, and percentage strings with strict constructors
 - A configured 40-significant-digit decimal constructor
@@ -98,6 +98,11 @@ Display formatting is independent. Canonical domain values never contain the INR
 | `adaptDepreciationScheduleToBalanceSheetFixedAssets`, `adaptCashFlowScheduleToBalanceSheetCash`         | `src/domain/balance-sheet/adapters.ts`       | Implemented | Strict authoritative-balance mapping                              | Depreciation closing balances and cash-flow closing cash                               | `src/domain/balance-sheet/calculations.test.ts`   |
 | `adaptLoanScheduleToBalanceSheetOutstanding`, `adaptFinancingInflowsToPromoterCapital`                  | `src/domain/balance-sheet/adapters.ts`       | Implemented | Strict balance mapping and explicit roll-forward convention       | Loan closing principal and explicit yearly promoter contributions                      | `src/domain/balance-sheet/calculations.test.ts`   |
 | `composeBalanceSheetYearInputs`, `calculateBalanceSheetFromAuthoritativeSchedules`                      | `src/domain/balance-sheet/adapters.ts`       | Implemented | Strict composition, debt-classification, and year-alignment rules | P&L, depreciation, cash flow, loan, financing, and accounting-balance schedules        | `src/domain/balance-sheet/calculations.test.ts`   |
+| `calculateDscr`, `calculateAverageDscr`, `calculateInterestCoverageRatio`                               | `src/domain/metrics/calculations.ts`         | Implemented | Explicit ProjectSetu bankability conventions                      | Authoritative PAT, depreciation, recognized interest, principal repayment, and EBIT    | `src/domain/metrics/calculations.test.ts`         |
+| `calculateDebtEquityRatio`, `calculateCurrentRatio`                                                     | `src/domain/metrics/calculations.ts`         | Implemented | Ratio identities with explicit undefined states                   | Authoritative balance-sheet totals and classified interest-bearing debt                | `src/domain/metrics/calculations.test.ts`         |
+| `calculateBreakEvenMetrics`                                                                             | `src/domain/metrics/calculations.ts`         | Implemented | Contribution identities and explicit cost-classification boundary | Authoritative revenue plus explicitly normalized fixed and variable costs              | `src/domain/metrics/calculations.test.ts`         |
+| `calculateRoi`, `calculateRoce`, `calculateProfitabilityMargins`                                        | `src/domain/metrics/calculations.ts`         | Implemented | Explicit ProjectSetu return and margin conventions                | Authoritative P&L, project-cost, and balance-sheet values                              | `src/domain/metrics/calculations.test.ts`         |
+| `composeBankabilityMetricsYearInputs`, `calculateBankabilityMetricsFromAuthoritativeSchedules`          | `src/domain/metrics/adapters.ts`             | Implemented | Strict authoritative composition and year alignment               | Normalized P&L, loan principal, balance sheet, project cost, and cost classification   | `src/domain/metrics/calculations.test.ts`         |
 
 ## Phase 1 formula reference
 
@@ -425,7 +430,7 @@ The P&L module is a composition/calculation engine, not another source of revenu
 - **Formula/algorithm:** independently sum yearly revenue, operating expenses, EBITDA, depreciation, EBIT, interest expense, PBT, tax expense, and PAT.
 - **Result:** `ProfitAndLossCumulativeTotals`, with every field exactly reconciling to its yearly row sum.
 - **Rounding:** no intermediate or summary rounding.
-- **Limitations:** margins are deferred; zero-revenue years therefore do not receive an invented 0% margin. No opening/closing balance-sheet values are summed.
+- **Limitations:** margins are not calculated inside P&L; the downstream metrics module calculates them from copied P&L outputs and represents zero-revenue margins as undefined. No opening/closing balance-sheet values are summed.
 
 ## Projected cash-flow formula reference
 
@@ -528,8 +533,8 @@ The balance-sheet module is a point-in-time composition engine. It copies author
 
 - **Purpose:** separate authoritative closing principal from accounting maturity classification and prevent double-counting.
 - **Inputs:** Loan Engine total closing principal, source-backed long-term/current classification, payables, and other current liabilities.
-- **Formula/algorithm:** require `long-term loan outstanding + current debt = authoritative total closing principal`; then `total liabilities = long-term loan outstanding + current debt + payables + other current liabilities`.
-- **Result:** exact current/non-current debt balances and total liabilities. A classification mismatch is a typed input/composition failure, not an unbalanced statement.
+- **Formula/algorithm:** require `long-term loan outstanding + current debt = authoritative total closing principal`; calculate `total current liabilities = current debt + payables + other current liabilities`; then `total liabilities = long-term loan outstanding + total current liabilities`.
+- **Result:** exact current/non-current debt balances, total current liabilities, and total liabilities. A classification mismatch is a typed input/composition failure, not an unbalanced statement.
 - **Rounding:** none.
 - **Assumptions:** the Loan Engine does not provide accounting maturity classification. `longTermLoanOutstanding` therefore means the non-current portion when `currentDebt` is separately supplied.
 - **Limitations:** principal repayment is not an expense or closing balance. Interest expense/payment, accrued unpaid interest, and capitalized-interest fields are not separately added to principal. Multiple loans, other borrowings, maturity buckets, accrued-interest liabilities, GST/tax payables, and ageing are upstream or deferred.
@@ -564,10 +569,81 @@ The balance-sheet module is a point-in-time composition engine. It copies author
 - **Assumptions:** supplied numeric zero is present data and never treated as missing. Inventory, receivables, payables, other balances, debt classification, retained-earnings adjustments, and other equity remain explicit source-backed accounting inputs.
 - **Limitations:** Working Capital Engine requirement/gap is not assumed to equal inventory, current assets, NWC, receivables, or payables. The engine does not infer any accounting balance from a financing requirement or from the balance difference.
 
+## Financial-ratios and bankability-metrics formula reference
+
+All Task 011 functions consume normalized authoritative values and return canonical Decimal.js strings. `MetricResult` contains `{ status: "DEFINED", value }` only when a metric is mathematically defined. An undefined result contains a deterministic status and no value; it never substitutes zero, `NaN`, or `Infinity`. Negative PAT, EBITDA, EBIT, PBT, defined margins, ROI, coverage, and DSCR are valid. Negative depreciation, recognized interest, principal repayment, project cost, fixed or variable costs, debt, and ordinary non-negative accounting balances are rejected.
+
+### DSCR and Average DSCR
+
+- **Purpose:** measure annual and aggregate capacity to service explicitly normalized debt obligations.
+- **Inputs:** authoritative PAT, depreciation, recognized P&L interest expense, and authoritative principal repayment for each year.
+- **Formulas:** `CADS = PAT + depreciation + interest`; `debt service = principal + interest`; `DSCR = CADS / debt service`; `Average DSCR = sum(CADS) / sum(debt service)`.
+- **Result:** annual `DscrYearResult` plus `AverageDscrResult`. Zero annual debt service yields `UNDEFINED_ZERO_DENOMINATOR`. Average totals include only years with positive debt service; if total included debt service is zero, Average DSCR is undefined.
+- **Rounding:** none beyond the accepted Decimal.js precision context.
+- **Assumptions:** this is the explicit ProjectSetu Task 011 DPR-style convention. Average DSCR is a weighted total ratio, not a simple arithmetic mean of annual DSCR values.
+- **Limitations:** recognized interest is copied from P&L. The loan adapter supplies principal only and never chooses charged, paid, accrued, or capitalized interest. Lender-specific DSCR variants remain configurable future work.
+
+### Interest coverage
+
+- **Purpose:** measure EBIT coverage of recognized interest expense.
+- **Inputs:** authoritative EBIT and recognized P&L interest.
+- **Formula:** `interest coverage ratio = EBIT / interest`.
+- **Result:** a defined ratio when interest is positive; zero interest yields `UNDEFINED_ZERO_DENOMINATOR`. Negative EBIT produces valid negative coverage.
+- **Rounding:** none.
+- **Limitations:** this is EBIT coverage, not an unnamed EBITDA-based variant.
+
+### Debt-equity and current ratio
+
+- **Purpose:** measure closing interest-bearing leverage and current liquidity.
+- **Inputs:** authoritative long-term debt, current debt, total equity, total current assets, and total current liabilities from the balance sheet.
+- **Formulas:** `interest-bearing debt = long-term debt + current debt`; `debt-equity = interest-bearing debt / total equity`; `current ratio = total current assets / total current liabilities`.
+- **Result:** zero debt with positive equity is a defined zero. Zero equity or current liabilities yields `UNDEFINED_ZERO_DENOMINATOR`; negative equity yields `UNDEFINED_NEGATIVE_EQUITY` and is never made positive with an absolute value.
+- **Rounding:** none.
+- **Assumptions:** trade payables and other non-interest-bearing liabilities are not debt-equity numerator items. The balance-sheet engine exposes authoritative `totalCurrentLiabilities = current debt + payables + other current liabilities`; the metrics adapter copies and reconciles it.
+- **Limitations:** no lender gearing threshold, tangible-net-worth adjustment, subordinated-debt treatment, or off-balance-sheet debt rule.
+
+### Contribution and break-even
+
+- **Purpose:** calculate sales needed to cover explicitly classified fixed costs.
+- **Inputs:** authoritative yearly revenue plus explicitly normalized variable and fixed costs.
+- **Formulas:** `contribution = revenue - variable costs`; `CMR = contribution / revenue`; `break-even sales = fixed costs / CMR`, equivalently `fixed costs × revenue / contribution`; `break-even percentage = break-even sales / revenue × 100`.
+- **Result:** zero fixed costs with positive contribution produces zero break-even sales. Zero revenue makes all revenue-denominated metrics undefined. A zero or negative contribution retains its mathematically defined CMR when revenue is positive, but break-even sales and percentage use `UNDEFINED_NON_POSITIVE_CONTRIBUTION`.
+- **Rounding:** none.
+- **Assumptions:** the same authoritative revenue basis is required for P&L and break-even in every year. Each projection expense, including custom items, requires exactly one source-backed `FIXED` or `VARIABLE` classification.
+- **Limitations:** expense categories and fixed-annual/percentage-of-revenue methods never silently determine cost behavior. Capacity-based break-even and richer semi-variable classifications are deferred.
+
+### ROI and ROCE
+
+- **Purpose:** calculate explicit yearly return measures without inventing aggregate investment analysis.
+- **Inputs:** authoritative PAT, total project cost, EBIT, total assets, and total current liabilities.
+- **Formulas:** `ROI = PAT / total project cost × 100`; `capital employed = total assets - total current liabilities`; `ROCE = EBIT / capital employed × 100`.
+- **Result:** the same authoritative total-project-cost base is used for every yearly ROI. Zero denominators are undefined. Negative PAT or EBIT yields a valid negative defined return. Negative capital employed yields `UNDEFINED_NEGATIVE_CAPITAL_EMPLOYED` rather than an absolute-value ratio.
+- **Rounding:** none.
+- **Assumptions:** `total assets - current liabilities` is the sole ProjectSetu Task 011 capital-employed definition and does not change between years or mix with the alternative equity-plus-non-current-debt presentation.
+- **Limitations:** no cumulative ROI, ROE, average-capital denominator, IRR, NPV, discounted payback, MIRR, or profitability index.
+
+### Profitability margins
+
+- **Purpose:** express authoritative P&L subtotals as percentages of authoritative revenue.
+- **Formulas:** `EBITDA margin = EBITDA / revenue × 100`; `EBIT margin = EBIT / revenue × 100`; `PBT margin = PBT / revenue × 100`; `PAT margin = PAT / revenue × 100`.
+- **Result:** zero revenue yields `UNDEFINED_ZERO_DENOMINATOR` for every margin. A zero numerator with positive revenue yields defined zero, and negative numerators yield valid negative margins.
+- **Rounding:** none.
+- **Limitations:** no gross-profit, industry benchmark, or lender acceptance interpretation.
+
+### Authoritative metrics composition and year alignment
+
+- **Purpose:** align normalized owners without duplicating their financial formulas.
+- **Inputs:** P&L revenue, EBITDA, EBIT, PBT, PAT, depreciation, and recognized interest; loan principal repayment; balance-sheet totals and classified debt; total project cost; and projection amounts with explicit cost classifications.
+- **Algorithm:** adapters copy upstream values; cost classification sums only explicitly classified projection lines. Composition uses P&L as the sequential `1..N` timeline, requires a single project id, rejects invalid, duplicate, missing, extra, and out-of-order years, and verifies that break-even revenue exactly equals the same year's P&L revenue. Missing authoritative source data fails; a supplied canonical zero is valid data and may produce an undefined mathematical result.
+- **Result:** normalized `BankabilityMetricsYearInput` rows and a `BankabilityMetricsSchedule` containing yearly results plus weighted Average DSCR. No average is invented for current ratio, debt-equity, ROI, ROCE, or margins.
+- **Rounding:** no intermediate rounding; all arithmetic and comparisons use `ProjectSetuDecimal`.
+- **Assumptions:** `1..N` is a current ProjectSetu projection convention, not a statutory accounting requirement. Future adapters may map fiscal/calendar labels without changing formulas.
+- **Limitations:** the engine measures and does not approve. It has no lender, scheme, PMEGP, NLM, PMFME, subsidy, credit-score, CIBIL, collateral, drawing-power, CMA, industry-benchmark, UI, database, or report-rendering logic.
+
 ## Typed calculation failures
 
-`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid depreciation costs/residuals/additions/lives/rates/years or method configurations, invalid loan principal/rates/periods, moratorium inconsistencies, invalid or duplicate P&L/source years, missing/misaligned P&L source values, negative authoritative P&L expenses, invalid tax configuration/rates/overrides, unsupported loan/tax configurations, missing cash-flow sources/opening cash, invalid or misaligned cash-flow years, project-id mismatches, negative cash-flow inputs, invalid or duplicate balance-sheet/source years, missing balance-sheet sources/opening retained earnings, negative ordinary asset/liability/capital balances, accumulated depreciation over gross assets, inconsistent authoritative fixed-asset balances, negative cash mapping, promoter-capital continuity failures, and debt-classification mismatches. Decimal syntax remains enforced by canonical constructors. Valid unbalanced statements, negative PAT, retained earnings, other equity, and total equity are not calculation failures.
+`CalculationResult<T>` returns either a typed value or one or more `CalculationError` records. Structural failures include incomplete quantity/rate pairs, absent or duplicate yearly assumptions, invalid projection periods/overrides, negative projection quantities/prices, growth or escalation below −100%, invalid projection percentages, negative expenses, missing working-capital bases/day bases, invalid holding periods, invalid escalation periods, invalid depreciation costs/residuals/additions/lives/rates/years or method configurations, invalid loan principal/rates/periods, moratorium inconsistencies, invalid or duplicate P&L/source years, missing/misaligned P&L source values, negative authoritative P&L expenses, invalid tax configuration/rates/overrides, unsupported loan/tax configurations, missing cash-flow sources/opening cash, invalid or misaligned cash-flow years, project-id mismatches, negative cash-flow inputs, invalid or duplicate balance-sheet/source years, missing balance-sheet sources/opening retained earnings, negative ordinary asset/liability/capital balances, accumulated depreciation over gross assets, inconsistent authoritative fixed-asset balances, negative cash mapping, promoter-capital continuity failures, debt-classification mismatches, missing/misaligned metrics sources, inconsistent break-even revenue, unsourced/duplicate cost classifications, and negative non-negative metrics inputs. Decimal syntax remains enforced by canonical constructors. Valid unbalanced statements, negative PAT, EBITDA, EBIT, PBT, retained earnings, other equity, total equity, defined returns, margins, coverage, and DSCR are not calculation failures. Mathematically undefined metrics are successful typed results, not calculation failures.
 
 ## Future calculations
 
-Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff and expense/capitalization policies, statutory tax and depreciation, tax adjustments and payment timing, deferred tax, loss carry-forward, tax credits, partial-year depreciation, acquisitions/disposals, revaluation, impairment, lease accounting, P&L presentation extensions, margins, direct-method cash flow, collection/payment/inventory timing, GST cash flow and balances, dividends, overdraft/revolving-credit balancing, working-capital loan draws, detailed accounting subledgers and ageing, statutory/lender balance-sheet formats, consolidation, subsidy cash flows and accounting, scheme eligibility, DSCR, IRR, NPV, other advanced metrics, and sensitivity recalculation remain deferred. Every future assumption must remain explicit and source-backed.
+Manpower/pay-period totals, physical production and inventory flows, changing-rate or irregular loan behavior, accrued-interest payoff and expense/capitalization policies, statutory tax and depreciation, tax adjustments and payment timing, deferred tax, loss carry-forward, tax credits, partial-year depreciation, acquisitions/disposals, revaluation, impairment, lease accounting, P&L presentation extensions, direct-method cash flow, collection/payment/inventory timing, GST cash flow and balances, dividends, overdraft/revolving-credit balancing, working-capital loan draws, detailed accounting subledgers and ageing, statutory/lender balance-sheet formats, consolidation, subsidy cash flows and accounting, scheme eligibility, IRR, NPV, MIRR, discounted payback, profitability index, lender-specific formulas/thresholds, and sensitivity recalculation remain deferred. Every future assumption must remain explicit and source-backed.

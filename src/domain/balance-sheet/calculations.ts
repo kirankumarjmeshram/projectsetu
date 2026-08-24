@@ -304,6 +304,18 @@ export function calculateTotalLiabilities(
   );
 }
 
+export function calculateTotalCurrentLiabilities(
+  currentDebt: MonetaryAmount,
+  payables: MonetaryAmount,
+  otherCurrentLiabilities: MonetaryAmount,
+): MonetaryAmount {
+  return toMonetaryAmount(
+    toDecimal(currentDebt)
+      .plus(toDecimal(payables))
+      .plus(toDecimal(otherCurrentLiabilities)),
+  );
+}
+
 export function calculateClosingRetainedEarnings(
   openingRetainedEarnings: MonetaryAmount,
   profitAfterTax: MonetaryAmount,
@@ -428,6 +440,11 @@ function calculateBalanceSheetYearUnchecked(
   const totalAssets = toMonetaryAmount(
     toDecimal(netFixedAssets).plus(toDecimal(totalCurrentAssets)),
   );
+  const totalCurrentLiabilities = calculateTotalCurrentLiabilities(
+    input.currentDebt,
+    input.payables,
+    input.otherCurrentLiabilities,
+  );
   const totalLiabilities = calculateTotalLiabilities(
     input.longTermLoanOutstanding,
     input.currentDebt,
@@ -465,6 +482,7 @@ function calculateBalanceSheetYearUnchecked(
     currentDebt: input.currentDebt,
     payables: input.payables,
     otherCurrentLiabilities: input.otherCurrentLiabilities,
+    totalCurrentLiabilities,
     totalLiabilities,
     promoterCapital: input.promoterCapital,
     openingRetainedEarnings,

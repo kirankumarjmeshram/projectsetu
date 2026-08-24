@@ -37,6 +37,7 @@ import {
   calculateNetFixedAssets,
   calculateRetainedEarningsSchedule,
   calculateTotalCurrentAssets,
+  calculateTotalCurrentLiabilities,
   calculateTotalEquity,
   calculateTotalLiabilities,
 } from "./calculations";
@@ -123,6 +124,9 @@ function expectReconciliation(schedule: BalanceSheetSchedule): void {
         ),
       ),
     ).toBe(year.netFixedAssets);
+    expect(
+      add([year.currentDebt, year.payables, year.otherCurrentLiabilities]),
+    ).toBe(year.totalCurrentLiabilities);
     expect(
       add([
         year.inventory,
@@ -505,6 +509,16 @@ describe("balance-sheet arithmetic", () => {
     ).toBe("-30");
   });
 
+  it("calculates total current liabilities independently of long-term debt", () => {
+    expect(
+      calculateTotalCurrentLiabilities(
+        monetaryAmount("100"),
+        monetaryAmount("40"),
+        monetaryAmount("10"),
+      ),
+    ).toBe("150");
+  });
+
   it("calculates the signed balance difference exactly", () => {
     expect(
       calculateBalanceDifference(
@@ -523,6 +537,7 @@ describe("balance-sheet schedules", () => {
       netFixedAssets: "800",
       totalCurrentAssets: "400",
       totalAssets: "1200",
+      totalCurrentLiabilities: "250",
       totalLiabilities: "750",
       closingRetainedEarnings: "150",
       totalEquity: "450",
