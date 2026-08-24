@@ -214,3 +214,14 @@ The former placeholder metric result contracts have been superseded by the dedic
 ## Future calculations and validation
 
 Future deterministic domain modules must calculate manpower, physical production/inventory flows, irregular or changing-rate loan behavior, advanced interest-accounting treatment, advanced/irregular-date investment returns, lender-policy evaluation, and sensitivity. PMEGP, NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP are explicit source-backed program definitions; other authoritative live-program configurations, recommendation/optimization, sanction/release/accounting integration, and scheme source-ingestion remain deferred. Direct-method cash flow, statutory tax timing, deferred tax, loss carry-forward, tax credits, statutory/tax depreciation, detailed accounting subledgers, acquisitions/disposals, impairment, revaluation, and lease accounting also remain deferred.
+
+## Multi-scheme funding composition
+
+`FundingComposerInput` joins authoritative cost lines and their stated total,
+source-backed actual/requested financing, explicit program selections, normalized
+facts, and optional manual cost portions. `MultiProgramFundingResult` preserves
+individual program snapshots, every pairwise and benefit-level compatibility
+decision, the allocation ledger, independently evaluated contribution/bank
+constraints, semantic benefit totals, funding gaps, typed conflicts, warnings,
+manual-review items, and structured explanations. See
+[Multi-scheme funding composer](funding-composer.md).

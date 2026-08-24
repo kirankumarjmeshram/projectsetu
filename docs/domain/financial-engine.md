@@ -114,6 +114,7 @@ Display formatting is independent. Canonical domain values never contain the INR
 | `calculateFinancialBenefits`, `calculateProgramFundingConstraint`                                       | `src/domain/schemes/benefits.ts`, `calculations.ts`        | Implemented | Configured Decimal.js benefit and compliance calculations             | Explicit eligible basis, rate/fixed/per-unit inputs, caps, and financing facts           | `src/domain/schemes/calculations.test.ts`            |
 | `evaluateProgramCompatibility`, `validateAssistanceAllocations`, `evaluateProgramStack`                 | `src/domain/schemes/compatibility.ts`, `evaluation.ts`     | Implemented | Versioned convergence and conservative conflict convention            | Explicit compatibility rules, benefit types, same-cost policy, and allocation ledger     | `src/domain/schemes/calculations.test.ts`            |
 | `registerProgramDefinition`, `resolveProgramVersion`, `listActivePrograms`                              | `src/domain/schemes/registry.ts`                           | Implemented | Append-only version registry and as-of-date convention                | Stable program/version identity, effective dates, lifecycle, and provenance              | `src/domain/schemes/registry.test.ts`                |
+| `composeMultiProgramFunding`                                                                            | `src/domain/funding-composer/calculations.ts`              | Implemented | Generic funding composition, timing, and exact allocation convention  | Authoritative costs/finance, selected versions, evaluations, compatibility, and portions | `src/domain/funding-composer/*.test.ts`              |
 
 ## Phase 1 formula reference
 
@@ -710,6 +711,13 @@ The program engine evaluates already-versioned definitions; it does not fetch, i
 All monetary aggregation, percentages, caps, per-unit multiplication, proportional allocations, shortfalls, and cost-limit comparisons use `ProjectSetuDecimal` without intermediate rounding. Compatibility is not arithmetic permission: absent program/version convergence rules yield `UNKNOWN`, manual review, and a conflict. Same-cost assistance is accepted only under the configured policy; otherwise the allocation ledger reports double funding, benefit incompatibility, or overlapping bases. `selectedPrograms = []` bypasses scheme evaluation and returns normal `BANKABLE_PROJECT` mode.
 
 See [Scheme, program, and assistance engine](scheme-engine.md) for generic versioning, provenance, facts, rule semantics, release models, lifecycle behavior, and update workflow. Program-specific decisions are documented for [PMEGP](pmegp-program.md), [NLM](nlm-program.md), [PMFME](pmfme-program.md), [PMMY/MUDRA](mudra-program.md), and [Maharashtra CMEGP](cmegp-program.md). These modules consume normalized facts/costs and report eligibility, credit categories, calculated assistance, constraints, and release metadata; none alters a core financial-engine result.
+
+The [Multi-scheme funding composer](funding-composer.md) consumes these
+authoritative outputs without recomputing project costs, financing, loan
+schedules, or live-program rate/cap tables. Its initial funding equation counts
+only explicitly initial promoter funds, credit, other finance, and upfront
+assistance; deferred subsidy, reimbursement, interest subvention, and guarantee
+coverage remain separately classified.
 
 ## Typed calculation failures
 

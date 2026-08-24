@@ -2,7 +2,7 @@
 
 ## Status and boundary
 
-Task 013 implements the generic, versioned Scheme / Government Assistance / Credit Program Engine foundation. Task 014 adds authoritative PMEGP definitions. Task 015 adds separate NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP registration modules. None adds a live-program branch to generic evaluators. AIF is represented only by the official PMFME convergence relationship; a full AIF program, AHIDF, Stand-Up India, other state schemes, and district schemes remain absent. Generic tests continue to use `TEST.*` and `CUSTOM.*` definitions.
+Task 013 implements the generic, versioned Scheme / Government Assistance / Credit Program Engine foundation. Task 014 adds authoritative PMEGP definitions. Task 015 adds separate NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP registration modules. Task 016 adds the generic multi-scheme funding composer above these contracts. None adds a live-program branch to generic evaluators or the composer. AIF is represented only by the official PMFME convergence relationship; a full AIF program, AHIDF, Stand-Up India, other state schemes, and district schemes remain absent. Generic tests continue to use `TEST.*` and `CUSTOM.*` definitions.
 
 The module is pure domain logic. It has no UI, database, network, portal, document-processing, AI, sanction, claim, or disbursement dependency. Existing project-cost, financing, loan, projection, statement, metrics, and investment-return engines remain authoritative and scheme-agnostic. Program evaluation returns constraints and calculated expected entitlements; it never mutates financing or claims that assistance was sanctioned, released, received, or adjusted.
 
@@ -10,7 +10,7 @@ The module is pure domain logic. It has no UI, database, network, portal, docume
 
 `FinancingProgramDefinition` represents base finance, credit programs, capital or margin-money subsidy, interest subvention, credit guarantee, grant, reimbursement, seed capital, composite assistance, and custom programs. A program may contain zero financial benefits, so credit-only programs do not need a fake subsidy. `ProgramId` is an open validated namespaced string such as `TEST.CREDIT_ONLY` or `CUSTOM.CONSULTANT_42`, not a closed enum of known Indian schemes.
 
-Normal bankable projects use `selectedPrograms = []`. `evaluateProgramStack` then returns permanent `BANKABLE_PROJECT` mode with zero invented assistance and no scheme eligibility requirement.
+Normal bankable projects use `selectedPrograms = []`. Both the Task 013 stack primitive and Task 016 composer preserve permanent `BANKABLE_PROJECT` mode with zero invented assistance and no scheme eligibility requirement.
 
 ## Immutable versions and registry
 
@@ -69,7 +69,7 @@ Benefit kinds cover subsidy, margin money, grants, interest subvention, guarante
 
 Percentage benefits calculate `raw benefit = basis × rate`. Optional minimums and applicable absolute or percentage caps then determine `calculatedEligibleBenefit`. Program-level caps constrain the combined calculated entitlement. `BenefitCalculationTrace` retains basis, rate/fixed/per-unit inputs, raw amount, applied caps, and final amount. All monetary and rate arithmetic uses Decimal.js with no intermediate rounding.
 
-Contribution requirements support percentage of total/eligible cost and absolute minimums. Bank-finance rules express required, optional, or not-permitted finance, minimum/maximum amounts, self-finance permission, and credit linkage. Compliance results retain the source-backed actual amount and shortfall; they never rewrite the user's financing. `ProgramFundingConstraint` exposes these results for a future Financing Plan Composer.
+Contribution requirements support percentage of total/eligible cost and absolute minimums. Bank-finance rules express required, optional, or not-permitted finance, minimum/maximum amounts, self-finance permission, and credit linkage. Compliance results retain the source-backed actual amount and shortfall; they never rewrite the user's financing. `ProgramFundingConstraint` is consumed by the Task 016 [Multi-scheme funding composer](funding-composer.md).
 
 ## Release model
 
@@ -93,7 +93,11 @@ Select programs
   -> return conflicts/manual-review items otherwise
 ```
 
-The engine never silently chooses a winning program or optimizes assistance.
+The Task 013 stack evaluator remains a preliminary generic primitive. Task 016
+adds the production funding-composition layer with authoritative financing,
+explicit portion identities, heterogeneous timing/classification, structured
+explanations, combined constraints, and funding reconciliation. Neither layer
+silently chooses a winning program or optimizes assistance.
 
 ## Retirement and custom programs
 

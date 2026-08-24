@@ -2,7 +2,7 @@
 
 ## Status
 
-The repository implements a Next.js application shell, quality tooling, canonical provider-independent TypeScript contracts, deterministic financial engines through investment returns, a generic versioned financing-program engine, and separately registered PMEGP, NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP definitions. Product workflows, persistence, other authoritative live government-program rules, lender-policy evaluation, irregular-date returns, WACC, and other advanced financial calculations remain unimplemented.
+The repository implements a Next.js application shell, quality tooling, canonical provider-independent TypeScript contracts, deterministic financial engines through investment returns, a generic versioned financing-program engine, separately registered PMEGP, NLM, PMFME, PMMY/MUDRA, and Maharashtra CMEGP definitions, and a pure multi-scheme funding composer. Product workflows, persistence, other authoritative live government-program rules, lender-policy evaluation, irregular-date returns, WACC, and other advanced financial calculations remain unimplemented.
 
 ## Dependency direction
 
@@ -32,6 +32,8 @@ The metrics module consumes explicit normalized P&L, loan-principal, balance-she
 The investment-returns module consumes an explicit equally spaced `0..N` investment cash-flow series tagged as project or equity return. Its project adapter composes only source-backed project investment, operating cash generation, working-capital investment/recovery, capex, terminal value, and other explicit project flows; financing and accounting-profit fields are forbidden. NPV evaluation, discounted schedules, payback interpolation, PI, and IRR root evaluation use Decimal.js. Bounded bracket expansion and bisection use native integers only for loop control. The module imports no UI, persistence, scheme, subsidy, lender-threshold, P&L, balance-sheet, or financing schedule.
 
 The schemes module decorates an authoritative bankable project model rather than replacing it. A registry resolves immutable `programId`/`versionId` definitions by evaluation date; pure rule, cost, benefit, funding, compatibility, and allocation evaluators produce traceable outcomes. No selected combination is valid merely because multiple selection is supported: missing convergence rules remain unknown/manual-review states. The module returns constraints and calculated expected assistance without mutating project cost, means of finance, loans, statements, or cash flows.
+
+The funding-composer module is a generic layer above that engine. It consumes authoritative project-cost identities, source-backed financing, independent program evaluations, and effective-dated compatibility evidence. It evaluates every unique program pair, preserves benefit-level restrictions and release timing, validates explicit or deterministic cost portions, detects double funding/over-allocation, composes contribution and bank constraints, and reports initial funding separately from deferred or non-cash economic assistance. It never branches on a live program id or invents balancing finance.
 
 `domain/schemes/programs/pmegp` is a leaf program module over those generic contracts. New-enterprise and upgradation retain separate program identities, rules, cost limits, rate tables, lifecycle metadata, evaluators, and version snapshots. Core project-cost and financial engines do not import it.
 

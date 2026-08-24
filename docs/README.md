@@ -13,6 +13,7 @@ ProjectSetu is in its foundation phase. These documents describe intended bounda
 - [Environment variables](development/environment-variables.md)
 - [Financial engine](domain/financial-engine.md)
 - [Scheme engine](domain/scheme-engine.md)
+- [Multi-scheme funding composer](domain/funding-composer.md)
 - [PMEGP program definitions](domain/pmegp-program.md)
 - [NLM program definitions](domain/nlm-program.md)
 - [PMFME program definitions](domain/pmfme-program.md)
