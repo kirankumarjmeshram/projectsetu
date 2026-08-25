@@ -16,20 +16,32 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:db": "vitest run --config vitest.config.db.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "decimal.js": "^10.6.0",
+    "drizzle-orm": "^0.45.2",
     "next": "^16.3.2",
+    "pg": "^8.23.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.2.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitest/coverage-v8": "^4.1.11",
+    "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
+    "embedded-postgres": "^16.14.0-beta.17",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.2",
     "prettier": "^3.9.6",
