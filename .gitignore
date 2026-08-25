@@ -49,6 +49,7 @@ pnpm-debug.log*
 *.db
 *.dump
 *.sql.gz
+.postgres-test-data/
 
 # Deployment and tooling
 /.vercel/
