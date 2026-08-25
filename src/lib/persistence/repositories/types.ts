@@ -289,10 +289,14 @@ export interface PersistedDocumentMetadata {
   readonly projectId: string;
   readonly kind: string;
   readonly displayName: string | null;
+  readonly originalFilename: string | null;
   readonly version: string | null;
   readonly storageKey: string | null;
   readonly mimeType: string | null;
   readonly sizeBytes: string | null;
+  readonly checksumSha256: string | null;
+  readonly status: string;
+  readonly supersededById: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -302,10 +306,14 @@ export interface CreateDocumentMetadataInput {
   readonly projectId: string;
   readonly kind: string;
   readonly displayName?: string;
+  readonly originalFilename?: string;
   readonly version?: string;
   readonly storageKey?: string;
   readonly mimeType?: string;
   readonly sizeBytes?: string;
+  readonly checksumSha256?: string;
+  readonly status?: string;
+  readonly supersededById?: string;
 }
 
 export interface DocumentMetadataRepository {
@@ -320,6 +328,131 @@ export interface DocumentMetadataRepository {
     id: string,
     input: Partial<CreateDocumentMetadataInput>,
   ): Promise<PersistedDocumentMetadata | null>;
+}
+
+// ─── Quotation Extraction & Review ──────────────────────────────────────────
+
+export interface PersistedQuotationExtraction {
+  readonly id: string;
+  readonly projectId: string;
+  readonly documentId: string;
+  readonly status: string;
+  readonly extractionProvider: string;
+  readonly rawData: unknown;
+  readonly normalizedData: unknown;
+  readonly confidenceScore: string | null;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface CreateQuotationExtractionInput {
+  readonly id?: string;
+  readonly projectId: string;
+  readonly documentId: string;
+  readonly status?: string;
+  readonly extractionProvider: string;
+  readonly rawData: unknown;
+  readonly normalizedData: unknown;
+  readonly confidenceScore?: string;
+}
+
+export interface QuotationExtractionRepository {
+  create(
+    input: CreateQuotationExtractionInput,
+  ): Promise<PersistedQuotationExtraction>;
+  findById(id: string): Promise<PersistedQuotationExtraction | null>;
+  findByDocumentId(
+    documentId: string,
+  ): Promise<readonly PersistedQuotationExtraction[]>;
+  findByProjectId(
+    projectId: string,
+  ): Promise<readonly PersistedQuotationExtraction[]>;
+  updateStatus(
+    id: string,
+    status: string,
+  ): Promise<PersistedQuotationExtraction | null>;
+}
+
+export interface PersistedQuotationReview {
+  readonly id: string;
+  readonly projectId: string;
+  readonly extractionId: string;
+  readonly status: string;
+  readonly reviewedData: unknown;
+  readonly reviewerNotes: string | null;
+  readonly approvedAt: Date | null;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface CreateQuotationReviewInput {
+  readonly id?: string;
+  readonly projectId: string;
+  readonly extractionId: string;
+  readonly status?: string;
+  readonly reviewedData: unknown;
+  readonly reviewerNotes?: string;
+  readonly approvedAt?: Date;
+}
+
+export interface QuotationReviewRepository {
+  create(input: CreateQuotationReviewInput): Promise<PersistedQuotationReview>;
+  findById(id: string): Promise<PersistedQuotationReview | null>;
+  findByExtractionId(
+    extractionId: string,
+  ): Promise<readonly PersistedQuotationReview[]>;
+  findByProjectId(
+    projectId: string,
+  ): Promise<readonly PersistedQuotationReview[]>;
+  update(
+    id: string,
+    input: Partial<CreateQuotationReviewInput>,
+  ): Promise<PersistedQuotationReview | null>;
+}
+
+export interface PersistedQuotationLineMapping {
+  readonly id: string;
+  readonly projectId: string;
+  readonly documentId: string;
+  readonly quotationLineId: string;
+  readonly projectCostItemId: string | null;
+  readonly costCategory: string;
+  readonly sourceAmount: string;
+  readonly mappedAmount: string;
+  readonly mappingType: string;
+  readonly status: string;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface CreateQuotationLineMappingInput {
+  readonly id?: string;
+  readonly projectId: string;
+  readonly documentId: string;
+  readonly quotationLineId: string;
+  readonly projectCostItemId?: string;
+  readonly costCategory: string;
+  readonly sourceAmount: string;
+  readonly mappedAmount: string;
+  readonly mappingType?: string;
+  readonly status?: string;
+}
+
+export interface QuotationLineMappingRepository {
+  create(
+    input: CreateQuotationLineMappingInput,
+  ): Promise<PersistedQuotationLineMapping>;
+  findById(id: string): Promise<PersistedQuotationLineMapping | null>;
+  findByProjectId(
+    projectId: string,
+  ): Promise<readonly PersistedQuotationLineMapping[]>;
+  findByDocumentId(
+    documentId: string,
+  ): Promise<readonly PersistedQuotationLineMapping[]>;
+  updateStatus(
+    id: string,
+    status: string,
+  ): Promise<PersistedQuotationLineMapping | null>;
 }
 
 // ─── Report Metadata ────────────────────────────────────────────────────────

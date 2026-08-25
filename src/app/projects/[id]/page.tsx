@@ -64,6 +64,7 @@ export default async function ProjectWizardPage({ params }: ProjectPageProps) {
       {/* Main Wizard Area */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <WizardContainer
+          projectId={id}
           initialInput={wizardInput}
           onSaveDraft={saveProjectDraftAction}
         />

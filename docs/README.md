@@ -21,6 +21,7 @@ ProjectSetu is in its foundation phase. These documents describe intended bounda
 - [Maharashtra CMEGP program definition](domain/cmegp-program.md)
 - [Canonical domain model](domain/domain-model.md)
 - [Document engine](domain/document-engine.md)
+- [Document management & quotation processing](domain/documents.md)
 - [Report engine](domain/report-engine.md)
 - [DPR requirements baseline](product/dpr-requirements.md)
 - [Security guidelines](security/security-guidelines.md)

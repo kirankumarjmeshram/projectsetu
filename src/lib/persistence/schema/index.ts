@@ -6,3 +6,6 @@ export { calculationSnapshots } from "./calculation-snapshots";
 export { fundingSnapshots } from "./funding-snapshots";
 export { documentMetadata } from "./document-metadata";
 export { reportMetadata } from "./report-metadata";
+export { quotationExtractions } from "./quotation-extractions";
+export { quotationReviews } from "./quotation-reviews";
+export { quotationLineMappings } from "./quotation-line-mappings";

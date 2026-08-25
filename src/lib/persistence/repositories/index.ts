@@ -8,6 +8,11 @@ export {
 } from "./pg-calculation-repository";
 export { PgDocumentMetadataRepository } from "./pg-document-repository";
 export { PgReportMetadataRepository } from "./pg-report-repository";
+export {
+  PgQuotationExtractionRepository,
+  PgQuotationReviewRepository,
+  PgQuotationLineMappingRepository,
+} from "./pg-quotation-repository";
 
 export type {
   CalculationRunRepository,
@@ -22,7 +27,6 @@ export type {
   CreateProjectInput,
   CreateReportMetadataInput,
   DocumentMetadataRepository,
-  EntityNotFoundError,
   FundingSnapshotRepository,
   InputSnapshotRepository,
   PersistedCalculationRun,
@@ -30,8 +34,8 @@ export type {
   PersistedDocumentMetadata,
   PersistedFundingSnapshot,
   PersistedInputSnapshot,
-  PersistedProject,
   PersistedProgramSelection,
+  PersistedProject,
   PersistedReportMetadata,
   ProgramSelectionRepository,
   ProjectRepository,
@@ -39,4 +43,13 @@ export type {
   RepositoryError,
   RepositoryResult,
   UpdateProjectInput,
+  CreateQuotationExtractionInput,
+  PersistedQuotationExtraction,
+  QuotationExtractionRepository,
+  CreateQuotationReviewInput,
+  PersistedQuotationReview,
+  QuotationReviewRepository,
+  CreateQuotationLineMappingInput,
+  PersistedQuotationLineMapping,
+  QuotationLineMappingRepository,
 } from "./types";

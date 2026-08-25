@@ -24,10 +24,14 @@ export class PgDocumentMetadataRepository implements DocumentMetadataRepository 
         projectId: input.projectId,
         kind: input.kind,
         displayName: input.displayName ?? null,
-        version: input.version ?? null,
+        originalFilename: input.originalFilename ?? null,
+        version: input.version ?? "1",
         storageKey: input.storageKey ?? null,
         mimeType: input.mimeType ?? null,
         sizeBytes: input.sizeBytes ?? null,
+        checksumSha256: input.checksumSha256 ?? null,
+        status: input.status ?? "UPLOADED",
+        supersededById: input.supersededById ?? null,
         createdAt: now,
         updatedAt: now,
       })
@@ -68,11 +72,18 @@ export class PgDocumentMetadataRepository implements DocumentMetadataRepository 
     if (input.kind !== undefined) updateValues.kind = input.kind;
     if (input.displayName !== undefined)
       updateValues.displayName = input.displayName;
+    if (input.originalFilename !== undefined)
+      updateValues.originalFilename = input.originalFilename;
     if (input.version !== undefined) updateValues.version = input.version;
     if (input.storageKey !== undefined)
       updateValues.storageKey = input.storageKey;
     if (input.mimeType !== undefined) updateValues.mimeType = input.mimeType;
     if (input.sizeBytes !== undefined) updateValues.sizeBytes = input.sizeBytes;
+    if (input.checksumSha256 !== undefined)
+      updateValues.checksumSha256 = input.checksumSha256;
+    if (input.status !== undefined) updateValues.status = input.status;
+    if (input.supersededById !== undefined)
+      updateValues.supersededById = input.supersededById;
 
     const rows = await this.db
       .update(documentMetadata)
@@ -91,10 +102,14 @@ export class PgDocumentMetadataRepository implements DocumentMetadataRepository 
       projectId: row.projectId,
       kind: row.kind,
       displayName: row.displayName,
+      originalFilename: row.originalFilename,
       version: row.version,
       storageKey: row.storageKey,
       mimeType: row.mimeType,
       sizeBytes: row.sizeBytes,
+      checksumSha256: row.checksumSha256,
+      status: row.status,
+      supersededById: row.supersededById,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
