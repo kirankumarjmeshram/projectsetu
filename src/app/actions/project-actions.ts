@@ -244,6 +244,10 @@ export async function runProjectCalculationAction(
   success: boolean;
   result: ProjectCalculationResult;
   error?: string;
+  inputSnapshotId?: string;
+  calculationRunId?: string;
+  calculationSnapshotId?: string;
+  fundingSnapshotId?: string;
 }> {
   try {
     const result = orchestrateProjectCalculation(input);
@@ -267,7 +271,7 @@ export async function runProjectCalculationAction(
       });
 
       if (run) {
-        await calcSnapshotRepo.create({
+        const calculationSnapshot = await calcSnapshotRepo.create({
           projectId: input.project.id,
           calculationRunId: run.id,
           snapshotType: "FULL_FINANCIAL_PROJECTIONS",
@@ -275,15 +279,25 @@ export async function runProjectCalculationAction(
           data: result,
         });
 
+        let fundingSnapshotId: string | undefined;
         if (result.fundingComposer) {
-          await fundingSnapshotRepo.create({
+          const fundingSnapshot = await fundingSnapshotRepo.create({
             projectId: input.project.id,
             calculationRunId: run.id,
             snapshotType: "FUNDING_COMPOSER",
             schemaVersion: 1,
             data: result.fundingComposer,
           });
+          fundingSnapshotId = fundingSnapshot.id;
         }
+        return {
+          success: true,
+          result,
+          inputSnapshotId,
+          calculationRunId: run.id,
+          calculationSnapshotId: calculationSnapshot.id,
+          fundingSnapshotId,
+        };
       }
     }
 

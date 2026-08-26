@@ -579,6 +579,7 @@ describe("Document & Report Metadata — DPR Reproducibility", () => {
   let calcRunRepo: PgCalculationRunRepository;
   let docRepo: PgDocumentMetadataRepository;
   let reportRepo: PgReportMetadataRepository;
+  let fundingRepo: PgFundingSnapshotRepository;
 
   beforeEach(async () => {
     ctx = await createTestTransaction();
@@ -587,6 +588,7 @@ describe("Document & Report Metadata — DPR Reproducibility", () => {
     calcRunRepo = new PgCalculationRunRepository(ctx.db);
     docRepo = new PgDocumentMetadataRepository(ctx.db);
     reportRepo = new PgReportMetadataRepository(ctx.db);
+    fundingRepo = new PgFundingSnapshotRepository(ctx.db);
   });
 
   afterEach(async () => {
@@ -629,13 +631,33 @@ describe("Document & Report Metadata — DPR Reproducibility", () => {
       projectId: project.id,
       inputSnapshotId: inputSnapshot.id,
     });
+    const fundingSnapshot = await fundingRepo.create({
+      projectId: project.id,
+      calculationRunId: calcRun.id,
+      data: { resolutionStatus: "RESOLVED" },
+    });
+    const pdf = await docRepo.create({
+      projectId: project.id,
+      kind: "PROJECT_REPORT",
+      originalFilename: "ProjectSetu_Solar_DPR_v1.pdf",
+      storageKey: "projects/solar-01/reports/report-v1.pdf",
+      status: "APPROVED",
+    });
 
     const report = await reportRepo.create({
       projectId: project.id,
       reportType: "BANKABLE",
+      reportVersion: 1,
       templateReference: "dpr-bankable-v2",
       inputSnapshotId: inputSnapshot.id,
       calculationRunId: calcRun.id,
+      fundingSnapshotId: fundingSnapshot.id,
+      templateVersion: "BASE_BANKABLE_DPR/1.0",
+      contentSchemaVersion: 1,
+      status: "READY",
+      content: { title: "Immutable report content" },
+      pdfDocumentId: pdf.id,
+      generatedAt: new Date("2026-04-01T12:00:00.000Z"),
       programContext: {
         selectedPrograms: [
           { programId: "GOI.PMEGP", versionId: "2024-25.NATIONAL" },
@@ -652,6 +674,10 @@ describe("Document & Report Metadata — DPR Reproducibility", () => {
     expect(report.inputSnapshotId).toBe(inputSnapshot.id);
     expect(report.calculationRunId).toBe(calcRun.id);
     expect(report.templateReference).toBe("dpr-bankable-v2");
+    expect(report.fundingSnapshotId).toBe(fundingSnapshot.id);
+    expect(report.pdfDocumentId).toBe(pdf.id);
+    expect(report.status).toBe("READY");
+    expect(report.content).toEqual({ title: "Immutable report content" });
 
     const retrieved = await reportRepo.findById(report.id);
     expect(retrieved?.programContext).toEqual({

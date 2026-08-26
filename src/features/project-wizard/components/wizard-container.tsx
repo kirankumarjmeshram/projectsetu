@@ -7,7 +7,6 @@ import type {
   ProjectCalculationResult,
   ProjectWizardInput,
 } from "@/lib/application/orchestrator/orchestrator-types";
-import { orchestrateProjectCalculation } from "@/lib/application/orchestrator/calculation-orchestrator";
 import { sumDecimalStrings } from "@/lib/application/formatters";
 import { DocumentListView } from "@/features/documents/components/document-list-view";
 
@@ -30,6 +29,11 @@ interface WizardContainerProps {
   onSaveDraft?: (
     input: ProjectWizardInput,
   ) => Promise<{ success: boolean; error?: string }>;
+  onRunCalculation?: (input: ProjectWizardInput) => Promise<{
+    success: boolean;
+    result: ProjectCalculationResult;
+    error?: string;
+  }>;
 }
 
 export function WizardContainer({
@@ -37,6 +41,7 @@ export function WizardContainer({
   initialInput,
   initialCalculationResult = null,
   onSaveDraft,
+  onRunCalculation,
 }: WizardContainerProps) {
   const [input, setInput] = useState<ProjectWizardInput>(initialInput);
   const [activeTab, setActiveTab] = useState<"WIZARD" | "DOCUMENTS">("WIZARD");
@@ -85,9 +90,11 @@ export function WizardContainer({
   };
 
   const handleExecuteCalculation = () => {
-    startTransition(() => {
-      const res = orchestrateProjectCalculation(input);
-      setCalculationResult(res);
+    startTransition(async () => {
+      if (!onRunCalculation) return;
+      if (onSaveDraft) await onSaveDraft(input);
+      const response = await onRunCalculation(input);
+      setCalculationResult(response.result);
       setCurrentStep(10);
       setMaxReachedStep(10);
       setActiveTab("WIZARD");
@@ -296,6 +303,7 @@ export function WizardContainer({
 
             {currentStep === 10 && (
               <Step10Results
+                projectId={projectId}
                 result={calculationResult}
                 onRecalculate={handleExecuteCalculation}
                 isCalculating={isPending}

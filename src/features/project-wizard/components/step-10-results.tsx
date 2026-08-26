@@ -14,8 +14,10 @@ import { IssuesView } from "@/features/financial-results/components/issues-view"
 import { LoanScheduleTable } from "@/features/financial-results/components/loan-schedule-table";
 import { ProfitAndLossTable } from "@/features/financial-results/components/profit-and-loss-table";
 import { RevenueProjectionTable } from "@/features/financial-results/components/revenue-projection-table";
+import { ReportGenerationPanel } from "@/features/reports/components/report-generation-panel";
 
 interface Step10ResultsProps {
+  projectId: string;
   result: ProjectCalculationResult | null;
   onRecalculate: () => void;
   isCalculating: boolean;
@@ -35,6 +37,7 @@ type StatementTab =
   | "AUDIT_ISSUES";
 
 export function Step10Results({
+  projectId,
   result,
   onRecalculate,
   isCalculating,
@@ -43,26 +46,29 @@ export function Step10Results({
 
   if (!result) {
     return (
-      <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-12 text-center">
-        <div className="text-3xl">📊</div>
-        <h3 className="text-base font-bold text-slate-900">
-          No Calculation Run Yet
-        </h3>
-        <p className="mx-auto max-w-md text-xs text-slate-500">
-          Execute the financial calculation engines to generate multi-year
-          projected financial statements, bankability ratios, DCF returns, and
-          scheme evaluations.
-        </p>
-        <button
-          type="button"
-          onClick={onRecalculate}
-          disabled={isCalculating}
-          className="rounded-xl bg-emerald-700 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-800 disabled:opacity-50"
-        >
-          {isCalculating
-            ? "Calculating..."
-            : "⚡ Execute Financial Engines Now"}
-        </button>
+      <div className="space-y-6">
+        <ReportGenerationPanel projectId={projectId} />
+        <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-12 text-center">
+          <div className="text-3xl">📊</div>
+          <h3 className="text-base font-bold text-slate-900">
+            No Calculation Run Yet
+          </h3>
+          <p className="mx-auto max-w-md text-xs text-slate-500">
+            Execute the financial calculation engines to generate multi-year
+            projected financial statements, bankability ratios, DCF returns, and
+            scheme evaluations.
+          </p>
+          <button
+            type="button"
+            onClick={onRecalculate}
+            disabled={isCalculating}
+            className="rounded-xl bg-emerald-700 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-emerald-800 disabled:opacity-50"
+          >
+            {isCalculating
+              ? "Calculating..."
+              : "⚡ Execute Financial Engines Now"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -89,6 +95,7 @@ export function Step10Results({
 
   return (
     <div className="space-y-6">
+      <ReportGenerationPanel projectId={projectId} />
       {/* Top Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>

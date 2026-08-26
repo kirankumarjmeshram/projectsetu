@@ -41,6 +41,7 @@ pnpm-debug.log*
 /temp/
 /storage/
 /generated-reports/
+/data/
 /private-documents/
 /ocr-output/
 /processing-output/

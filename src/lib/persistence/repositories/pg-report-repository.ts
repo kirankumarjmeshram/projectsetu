@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { generateId } from "../id";
 import { reportMetadata } from "../schema/report-metadata";
 import type { DrizzleDatabase } from "../db";
@@ -23,11 +23,23 @@ export class PgReportMetadataRepository implements ReportMetadataRepository {
         id,
         projectId: input.projectId,
         reportType: input.reportType,
+        reportVersion: input.reportVersion ?? 1,
         templateReference: input.templateReference ?? null,
         inputSnapshotId: input.inputSnapshotId ?? null,
         calculationRunId: input.calculationRunId ?? null,
+        fundingSnapshotId: input.fundingSnapshotId ?? null,
+        templateVersion: input.templateVersion ?? "BASE_BANKABLE_DPR/1.0",
+        contentSchemaVersion: input.contentSchemaVersion ?? 1,
+        status: input.status ?? "DRAFT",
         programContext: input.programContext ?? null,
         sections: input.sections ?? null,
+        content: input.content ?? null,
+        narrativeOverrides: input.narrativeOverrides ?? null,
+        generatedDocumentId: input.generatedDocumentId ?? null,
+        pdfDocumentId: input.pdfDocumentId ?? null,
+        docxDocumentId: input.docxDocumentId ?? null,
+        excelDocumentId: input.excelDocumentId ?? null,
+        generatedAt: input.generatedAt ?? null,
         createdAt: now,
         updatedAt: now,
       })
@@ -52,7 +64,8 @@ export class PgReportMetadataRepository implements ReportMetadataRepository {
     const rows = await this.db
       .select()
       .from(reportMetadata)
-      .where(eq(reportMetadata.projectId, projectId));
+      .where(eq(reportMetadata.projectId, projectId))
+      .orderBy(desc(reportMetadata.reportVersion));
 
     return rows.map((row) => this.toPersistedReport(row));
   }
@@ -67,15 +80,37 @@ export class PgReportMetadataRepository implements ReportMetadataRepository {
 
     if (input.reportType !== undefined)
       updateValues.reportType = input.reportType;
+    if (input.reportVersion !== undefined)
+      updateValues.reportVersion = input.reportVersion;
     if (input.templateReference !== undefined)
       updateValues.templateReference = input.templateReference;
     if (input.inputSnapshotId !== undefined)
       updateValues.inputSnapshotId = input.inputSnapshotId;
     if (input.calculationRunId !== undefined)
       updateValues.calculationRunId = input.calculationRunId;
+    if (input.fundingSnapshotId !== undefined)
+      updateValues.fundingSnapshotId = input.fundingSnapshotId;
+    if (input.templateVersion !== undefined)
+      updateValues.templateVersion = input.templateVersion;
+    if (input.contentSchemaVersion !== undefined)
+      updateValues.contentSchemaVersion = input.contentSchemaVersion;
+    if (input.status !== undefined) updateValues.status = input.status;
     if (input.programContext !== undefined)
       updateValues.programContext = input.programContext;
     if (input.sections !== undefined) updateValues.sections = input.sections;
+    if (input.content !== undefined) updateValues.content = input.content;
+    if (input.narrativeOverrides !== undefined)
+      updateValues.narrativeOverrides = input.narrativeOverrides;
+    if (input.generatedDocumentId !== undefined)
+      updateValues.generatedDocumentId = input.generatedDocumentId;
+    if (input.pdfDocumentId !== undefined)
+      updateValues.pdfDocumentId = input.pdfDocumentId;
+    if (input.docxDocumentId !== undefined)
+      updateValues.docxDocumentId = input.docxDocumentId;
+    if (input.excelDocumentId !== undefined)
+      updateValues.excelDocumentId = input.excelDocumentId;
+    if (input.generatedAt !== undefined)
+      updateValues.generatedAt = input.generatedAt;
 
     const rows = await this.db
       .update(reportMetadata)
@@ -93,12 +128,22 @@ export class PgReportMetadataRepository implements ReportMetadataRepository {
       id: row.id,
       projectId: row.projectId,
       reportType: row.reportType,
+      reportVersion: row.reportVersion,
       templateReference: row.templateReference,
       inputSnapshotId: row.inputSnapshotId,
       calculationRunId: row.calculationRunId,
+      fundingSnapshotId: row.fundingSnapshotId,
+      templateVersion: row.templateVersion,
+      contentSchemaVersion: row.contentSchemaVersion,
+      status: row.status,
       programContext: row.programContext,
       sections: row.sections,
+      content: row.content,
+      narrativeOverrides: row.narrativeOverrides,
       generatedDocumentId: row.generatedDocumentId,
+      pdfDocumentId: row.pdfDocumentId,
+      docxDocumentId: row.docxDocumentId,
+      excelDocumentId: row.excelDocumentId,
       generatedAt: row.generatedAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

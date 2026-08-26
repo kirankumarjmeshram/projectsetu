@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import {
   getProjectAction,
+  runProjectCalculationAction,
   saveProjectDraftAction,
 } from "@/app/actions/project-actions";
 import { WizardContainer } from "@/features/project-wizard/components/wizard-container";
@@ -67,6 +68,7 @@ export default async function ProjectWizardPage({ params }: ProjectPageProps) {
           projectId={id}
           initialInput={wizardInput}
           onSaveDraft={saveProjectDraftAction}
+          onRunCalculation={runProjectCalculationAction}
         />
       </main>
     </div>

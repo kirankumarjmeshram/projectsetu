@@ -461,12 +461,22 @@ export interface PersistedReportMetadata {
   readonly id: string;
   readonly projectId: string;
   readonly reportType: string;
+  readonly reportVersion: number;
   readonly templateReference: string | null;
   readonly inputSnapshotId: string | null;
   readonly calculationRunId: string | null;
+  readonly fundingSnapshotId: string | null;
+  readonly templateVersion: string;
+  readonly contentSchemaVersion: number;
+  readonly status: string;
   readonly programContext: unknown;
   readonly sections: unknown;
+  readonly content: unknown;
+  readonly narrativeOverrides: unknown;
   readonly generatedDocumentId: string | null;
+  readonly pdfDocumentId: string | null;
+  readonly docxDocumentId: string | null;
+  readonly excelDocumentId: string | null;
   readonly generatedAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -476,11 +486,23 @@ export interface CreateReportMetadataInput {
   readonly id?: string;
   readonly projectId: string;
   readonly reportType: string;
+  readonly reportVersion?: number;
   readonly templateReference?: string;
   readonly inputSnapshotId?: string;
   readonly calculationRunId?: string;
+  readonly fundingSnapshotId?: string;
+  readonly templateVersion?: string;
+  readonly contentSchemaVersion?: number;
+  readonly status?: string;
   readonly programContext?: unknown;
   readonly sections?: unknown;
+  readonly content?: unknown;
+  readonly narrativeOverrides?: unknown;
+  readonly generatedDocumentId?: string;
+  readonly pdfDocumentId?: string;
+  readonly docxDocumentId?: string;
+  readonly excelDocumentId?: string;
+  readonly generatedAt?: Date;
 }
 
 export interface ReportMetadataRepository {

@@ -31,4 +31,18 @@ export function createDatabase(connectionString: string) {
   return { pool, db };
 }
 
+let defaultDatabase: DrizzleDatabase | null = null;
+
+/** Server-only application database singleton. */
+export function getDb(): DrizzleDatabase {
+  if (!defaultDatabase) {
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL is required for persistence operations.");
+    }
+    defaultDatabase = createDrizzleClient(createPool(connectionString));
+  }
+  return defaultDatabase;
+}
+
 export type DrizzleDatabase = ReturnType<typeof createDrizzleClient>;

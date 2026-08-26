@@ -17,6 +17,7 @@ export async function startTestPostgres(port = 5433) {
     user: "postgres",
     password: "password",
     persistent: true,
+    initdbFlags: ["--encoding=UTF8", "--locale=C"],
   });
 
   try {
