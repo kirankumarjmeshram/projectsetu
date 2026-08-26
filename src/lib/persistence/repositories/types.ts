@@ -51,6 +51,7 @@ export interface PersistedProject {
   readonly implementationFrom: string | null;
   readonly implementationUntil: string | null;
   readonly currentInputSnapshotId: string | null;
+  readonly ownerId?: string | null;
   readonly revision: number;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -68,6 +69,7 @@ export interface CreateProjectInput {
   readonly projectionPeriodYears: number;
   readonly implementationFrom?: string;
   readonly implementationUntil?: string;
+  readonly ownerId?: string | null;
 }
 
 export interface UpdateProjectInput {
@@ -82,6 +84,7 @@ export interface UpdateProjectInput {
   readonly implementationFrom?: string | null;
   readonly implementationUntil?: string | null;
   readonly currentInputSnapshotId?: string | null;
+  readonly ownerId?: string | null;
 }
 
 export interface ProjectRepository {
@@ -99,6 +102,11 @@ export interface ProjectRepository {
    * Lists all projects (future: with pagination/filtering).
    */
   findAll(): Promise<readonly PersistedProject[]>;
+
+  /**
+   * Lists all projects owned by a specific user.
+   */
+  findByOwnerId(ownerId: string): Promise<readonly PersistedProject[]>;
 
   /**
    * Updates a project with optimistic concurrency control.
@@ -515,4 +523,90 @@ export interface ReportMetadataRepository {
     id: string,
     input: Partial<CreateReportMetadataInput>,
   ): Promise<PersistedReportMetadata | null>;
+}
+
+// ─── User, Session & Admin Audit ────────────────────────────────────────────
+
+export interface PersistedUser {
+  readonly id: string;
+  readonly email: string;
+  readonly name: string;
+  readonly passwordHash: string;
+  readonly role: "USER" | "ADMIN";
+  readonly isActive: boolean;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+}
+
+export interface CreateUserInput {
+  readonly id?: string;
+  readonly email: string;
+  readonly name: string;
+  readonly passwordHash: string;
+  readonly role?: "USER" | "ADMIN";
+  readonly isActive?: boolean;
+}
+
+export interface UserRepository {
+  create(input: CreateUserInput): Promise<PersistedUser>;
+  findById(id: string): Promise<PersistedUser | null>;
+  findByEmail(email: string): Promise<PersistedUser | null>;
+  findAll(): Promise<readonly PersistedUser[]>;
+  updateRole(id: string, role: "USER" | "ADMIN"): Promise<PersistedUser | null>;
+  updateActiveStatus(
+    id: string,
+    isActive: boolean,
+  ): Promise<PersistedUser | null>;
+  delete(id: string): Promise<boolean>;
+}
+
+export interface PersistedSession {
+  readonly id: string;
+  readonly userId: string;
+  readonly token: string;
+  readonly expiresAt: Date;
+  readonly createdAt: Date;
+}
+
+export interface CreateSessionInput {
+  readonly id?: string;
+  readonly userId: string;
+  readonly token: string;
+  readonly expiresAt: Date;
+}
+
+export interface SessionRepository {
+  create(input: CreateSessionInput): Promise<PersistedSession>;
+  findByToken(token: string): Promise<PersistedSession | null>;
+  deleteByToken(token: string): Promise<boolean>;
+  deleteByUserId(userId: string): Promise<number>;
+  deleteExpired(): Promise<number>;
+}
+
+export interface PersistedAdminAuditLog {
+  readonly id: string;
+  readonly actorUserId: string;
+  readonly action: string;
+  readonly entityType: string;
+  readonly entityId: string;
+  readonly metadata: unknown;
+  readonly createdAt: Date;
+}
+
+export interface CreateAdminAuditLogInput {
+  readonly id?: string;
+  readonly actorUserId: string;
+  readonly action: string;
+  readonly entityType: string;
+  readonly entityId: string;
+  readonly metadata?: unknown;
+}
+
+export interface AdminAuditRepository {
+  create(input: CreateAdminAuditLogInput): Promise<PersistedAdminAuditLog>;
+  findAll(limit?: number): Promise<readonly PersistedAdminAuditLog[]>;
+  findByEntityType(
+    entityType: string,
+    limit?: number,
+  ): Promise<readonly PersistedAdminAuditLog[]>;
 }

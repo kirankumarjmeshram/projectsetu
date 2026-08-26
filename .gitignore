@@ -11,6 +11,8 @@
 
 # Test output
 /coverage/
+/test-results/
+/playwright-report/
 
 # Environment files (keep the documented template)
 .env

@@ -90,9 +90,7 @@ describe("Task 018 Pre-Commit Review — Accounting, Boundaries & Semantic Audit
 
   it("verifies Scheme Assistance timing: subsidies are not treated as immediate cash in Means of Finance", () => {
     const input = createDefaultProjectWizardInput({
-      selectedPrograms: [
-        { programId: programId("GOI.PMFME.INDIVIDUAL_UNIT") },
-      ],
+      selectedPrograms: [{ programId: programId("GOI.PMFME.INDIVIDUAL_UNIT") }],
       schemeFacts: {
         applicant: { entityType: "INDIVIDUAL" },
       },

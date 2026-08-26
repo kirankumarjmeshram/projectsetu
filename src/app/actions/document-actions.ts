@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { canAccessProject, canMutateProject } from "@/lib/auth/authorization";
+import { getCurrentUser } from "@/lib/auth/session";
 import type { DocumentKind } from "@/lib/documents/contracts";
 import { getDocumentStorage } from "@/lib/documents/storage";
 import { getDb } from "@/lib/persistence/db";
@@ -12,6 +14,7 @@ import {
 
 export async function uploadDocumentAction(formData: FormData) {
   try {
+    const user = await getCurrentUser();
     const projectId = formData.get("projectId") as string;
     const kind = (formData.get("kind") as DocumentKind) || "OTHER";
     const displayName = (formData.get("displayName") as string) || null;
@@ -30,6 +33,14 @@ export async function uploadDocumentAction(formData: FormData) {
     const existingProject = await projectRepo.findById(projectId);
     if (!existingProject) {
       return { success: false, error: "Project not found." };
+    }
+
+    if (user && !canMutateProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to upload documents to this project.",
+      };
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -81,7 +92,20 @@ export async function uploadDocumentAction(formData: FormData) {
 
 export async function listProjectDocumentsAction(projectId: string) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+
+    const existingProject = await projectRepo.findById(projectId);
+    if (existingProject && user && !canAccessProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to view documents for this project.",
+        documents: [],
+      };
+    }
+
     const docRepo = new PgDocumentMetadataRepository(db);
     const docs = await docRepo.findByProjectId(projectId);
     return { success: true, documents: docs };
@@ -93,6 +117,7 @@ export async function listProjectDocumentsAction(projectId: string) {
 
 export async function getDocumentFileAction(documentId: string) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
     const docRepo = new PgDocumentMetadataRepository(db);
     const doc = await docRepo.findById(documentId);
@@ -100,6 +125,16 @@ export async function getDocumentFileAction(documentId: string) {
       return {
         success: false,
         error: "Document not found or has no stored file.",
+      };
+    }
+
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(doc.projectId);
+    if (existingProject && user && !canAccessProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to download this document.",
       };
     }
 
@@ -127,13 +162,26 @@ export async function getDocumentFileAction(documentId: string) {
 
 export async function archiveDocumentAction(documentId: string) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
     const docRepo = new PgDocumentMetadataRepository(db);
-    const updated = await docRepo.update(documentId, { status: "ARCHIVED" });
-    if (!updated) {
+    const doc = await docRepo.findById(documentId);
+    if (!doc) {
       return { success: false, error: "Document not found." };
     }
-    revalidatePath(`/projects/${updated.projectId}`);
+
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(doc.projectId);
+    if (existingProject && user && !canMutateProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to archive this document.",
+      };
+    }
+
+    const updated = await docRepo.update(documentId, { status: "ARCHIVED" });
+    revalidatePath(`/projects/${doc.projectId}`);
     return { success: true, document: updated };
   } catch (error) {
     console.error(`Failed to archive document ${documentId}:`, error);

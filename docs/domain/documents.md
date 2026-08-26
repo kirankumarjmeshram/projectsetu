@@ -5,6 +5,7 @@
 Task 019 introduces the production foundation for project document management and quotation processing in **ProjectSetu**.
 
 ### Core Principle: "Extraction Is Not Authority"
+
 Raw extracted data from documents is treated strictly as **evidence and proposed facts**. It never directly alters authoritative financial models or Project Cost inputs without explicit user review, correction, approval, and mapping:
 
 ```text
@@ -16,6 +17,7 @@ UPLOAD -> EXTRACT / MANUAL ENTRY -> REVIEW & VERIFY -> APPROVE -> MAP TO PROJECT
 ## 2. Document Storage Abstraction
 
 Document storage is decoupled behind the `DocumentStorage` interface in `src/lib/documents/storage.ts`:
+
 - **LocalDocumentStorage**: Managed development/local filesystem storage located outside PostgreSQL.
 - **Server-Controlled Storage Keys**: Keys follow the pattern `projects/${projectId}/${timestamp}_${uuid}_${sanitizedBasename}`.
 - **Security & Path Traversal Prevention**: Absolute paths, `..` traversals, drive letters, and null bytes are rejected.
@@ -27,6 +29,7 @@ Document storage is decoupled behind the `DocumentStorage` interface in `src/lib
 ## 3. Quotation Normalization & Indian Standards
 
 Quotation parsing and normalization (`src/lib/documents/quotation/normalization.ts`) handles Indian currency conventions:
+
 - Strips `₹`, `Rs.`, `INR`, trailing `/-`, and commas without losing decimal precision.
 - Itemized GST computation (`5%`, `12%`, `18%`, `28%`) with CGST/SGST/IGST breakdown.
 - Canonical decimal strings via `ProjectSetuDecimal` (`Decimal.js`). Zero IEEE-754 floating point arithmetic.

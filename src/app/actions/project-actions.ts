@@ -8,6 +8,8 @@ import type {
   ProjectStage,
   ProjectStatus,
 } from "@/domain/project/project";
+import { canAccessProject, canMutateProject } from "@/lib/auth/authorization";
+import { getCurrentUser } from "@/lib/auth/session";
 import type {
   ProjectCalculationResult,
   ProjectWizardInput,
@@ -25,10 +27,22 @@ import {
 
 export async function getProjectsAction() {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
-    const projects = await projectRepo.findAll();
-    return { success: true, projects };
+
+    const allProjects = await projectRepo.findAll();
+
+    // Authorization filter
+    const visibleProjects = allProjects.filter((p) => {
+      if (!user) {
+        // Unauthenticated visitor sees only unowned/demo projects
+        return !p.ownerId;
+      }
+      return canAccessProject(user, p);
+    });
+
+    return { success: true, projects: visibleProjects };
   } catch (error) {
     console.error("Failed to fetch projects:", error);
     return { success: false, error: (error as Error).message, projects: [] };
@@ -37,6 +51,7 @@ export async function getProjectsAction() {
 
 export async function getProjectAction(projectId: string) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
     const snapshotRepo = new PgInputSnapshotRepository(db);
@@ -44,6 +59,16 @@ export async function getProjectAction(projectId: string) {
     const project = await projectRepo.findById(projectId);
     if (!project) {
       return { success: false, error: "Project not found", data: null };
+    }
+
+    // Enforce tenant authorization
+    if (user && !canAccessProject(user, project)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to view this project.",
+        data: null,
+      };
     }
 
     const latestSnapshot = await snapshotRepo.findLatestByProjectId(projectId);
@@ -119,6 +144,7 @@ export async function createProjectAction(data: {
       };
     }
 
+    const user = await getCurrentUser();
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
     const snapshotRepo = new PgInputSnapshotRepository(db);
@@ -131,6 +157,7 @@ export async function createProjectAction(data: {
       status: "DRAFT",
       areaClassification: data.areaClassification || "RURAL",
       projectionPeriodYears: projectionPeriod,
+      ownerId: user?.id ?? null,
     });
 
     const defaultInput = createDefaultProjectWizardInput({
@@ -183,6 +210,7 @@ export async function saveProjectDraftAction(input: ProjectWizardInput) {
       return { success: false, error: "Project name cannot be empty." };
     }
 
+    const user = await getCurrentUser();
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
     const snapshotRepo = new PgInputSnapshotRepository(db);
@@ -190,6 +218,15 @@ export async function saveProjectDraftAction(input: ProjectWizardInput) {
     const existing = await projectRepo.findById(input.project.id);
     if (!existing) {
       return { success: false, error: "Project not found." };
+    }
+
+    // Authorization check
+    if (user && !canMutateProject(user, existing)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to modify this project.",
+      };
     }
 
     const nextRevision = existing.revision + 1;
@@ -250,16 +287,23 @@ export async function runProjectCalculationAction(
   fundingSnapshotId?: string;
 }> {
   try {
+    const user = await getCurrentUser();
+    const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+
+    const existing = await projectRepo.findById(input.project.id);
+    if (existing && user && !canAccessProject(user, existing)) {
+      throw new Error(
+        "Access denied. You do not have permission to calculate projections for this project.",
+      );
+    }
+
     const result = orchestrateProjectCalculation(input);
 
-    const db = getDb();
     const runRepo = new PgCalculationRunRepository(db);
     const calcSnapshotRepo = new PgCalculationSnapshotRepository(db);
     const fundingSnapshotRepo = new PgFundingSnapshotRepository(db);
 
-    const existing = await new PgProjectRepository(db).findById(
-      input.project.id,
-    );
     const inputSnapshotId = existing?.currentInputSnapshotId;
 
     if (inputSnapshotId) {
@@ -267,7 +311,7 @@ export async function runProjectCalculationAction(
         projectId: input.project.id,
         inputSnapshotId,
         status: result.success ? "COMPLETED" : "FAILED",
-        triggeredBy: "USER",
+        triggeredBy: user?.email ?? "USER",
       });
 
       if (run) {
@@ -304,7 +348,6 @@ export async function runProjectCalculationAction(
     return { success: true, result };
   } catch (error) {
     console.error("Failed to execute calculation run:", error);
-    // Even on server action persistence error, return the calculated results so user gets immediate financial feedback
     const fallbackResult = orchestrateProjectCalculation(input);
     return {
       success: true,
