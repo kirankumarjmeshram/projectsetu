@@ -1,38 +1,25 @@
 import { NextResponse } from "next/server";
 
-import { getDb } from "@/lib/persistence/db";
-import { PgProjectRepository } from "@/lib/persistence/repositories";
+import { getAppConfig } from "@/lib/env";
 
+/**
+ * Process Liveness Probe (/api/health)
+ *
+ * Used by orchestrators (Docker, Kubernetes, load balancers) to determine
+ * whether the Next.js Node process is running and accepting HTTP requests.
+ *
+ * Responds immediately with 200 OK without invoking external dependencies.
+ */
 export async function GET() {
-  const startTime = Date.now();
-  try {
-    const db = getDb();
-    const projectRepo = new PgProjectRepository(db);
-    // Safe connectivity probe
-    await projectRepo.findById("00000000-0000-0000-0000-000000000000");
+  const config = getAppConfig();
 
-    const latencyMs = Date.now() - startTime;
-
-    return NextResponse.json(
-      {
-        status: "healthy",
-        timestamp: new Date().toISOString(),
-        database: "connected",
-        latencyMs,
-        version: "0.1.0",
-      },
-      { status: 200 },
-    );
-  } catch (error) {
-    console.error("Health check failure:", error);
-    return NextResponse.json(
-      {
-        status: "unhealthy",
-        timestamp: new Date().toISOString(),
-        database: "disconnected",
-        error: "Database connectivity check failed.",
-      },
-      { status: 503 },
-    );
-  }
+  return NextResponse.json(
+    {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      version: config.appVersion,
+      uptimeSeconds: Math.floor(process.uptime()),
+    },
+    { status: 200 },
+  );
 }

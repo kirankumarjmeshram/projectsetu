@@ -20,7 +20,8 @@
     "test:db": "vitest run --config vitest.config.db.ts",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "npx tsx scripts/migrate.ts",
+    "db:migrate:status": "npx tsx scripts/migrate-status.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },

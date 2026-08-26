@@ -1,41 +1,63 @@
 # ProjectSetu
 
-ProjectSetu is an early-stage application for creating bankable project reports, subsidy-based DPRs, financial projections, and document-supported estimates. The repository contains engineering foundations, canonical domain contracts, deterministic financial engines, versioned PMEGP/NLM/PMFME/PMMY/CMEGP definitions, a pure multi-scheme funding composer, document/quotation workflows, and a versioned DPR foundation with deterministic narrative plus PDF, DOCX and Excel export. Production authentication, other authoritative live-program rules, lender policies, irregular-date analysis, external AI transports and deployment remain deferred.
+ProjectSetu is a deterministic financial calculation platform, MSME Detailed Project Report (DPR) generator, and Indian government scheme intelligence system. It features bankable multi-year cash flows, versioned government scheme modeling (PMEGP, NLM, PMFME, MUDRA, CMEGP), multi-program funding composition, document & quotation ingestion, PDF/DOCX/Excel artifact export, multi-tenant isolation, admin operations console, and production-grade PostgreSQL persistence.
 
 ## Architecture and stack
 
-The Next.js App Router composes pages in `src/app`; feature orchestration lives in `src/features`; deterministic business concepts belong in `src/domain`; reusable UI belongs in `src/components`; and infrastructure adapters belong in `src/lib`. The stack is Next.js, React, TypeScript, Tailwind CSS, Decimal.js, ESLint, Prettier, Vitest, and a PostgreSQL-ready (but provider-neutral) architecture.
+- **Frontend & App Framework**: Next.js 16 (App Router), React 19, Tailwind CSS
+- **Domain Modeling**: 100% pure deterministic TypeScript domain layer with Decimal.js precision
+- **Persistence & Database**: PostgreSQL 14+ with Drizzle ORM (schema migrations, connection pooling, SSL)
+- **Authentication & Security**: Scrypt password hashing, session token SHA-256 hashing, HTTP-only secure cookies, sliding-window rate limiting, and server-side RBAC
+- **Testing & Quality**: Vitest unit suite, PostgreSQL integration suite, Playwright browser E2E suite, ESLint, and Prettier
 
 ## Local development
 
-Requires Node.js 20.9 or newer and npm.
+Requires Node.js 20.9+ and npm.
 
 ```bash
+# 1. Install dependencies
 npm install
-copy .env.example .env.local
+
+# 2. Configure environment
+cp .env.example .env.local
+
+# 3. Start local PostgreSQL & run migrations
+npm run db:migrate
+
+# 4. Start development server
 npm run dev
 ```
 
-Open `http://localhost:3000`. The example values are safe for local setup; leave unused future integration variables empty.
+Open `http://localhost:3000`.
+
+## Verification & Test Suites
 
 ```bash
-npm run typecheck
-npm run lint
-npm run format:check
-npm test
-npm run build
+npm run format:check  # Prettier style validation
+npm run typecheck     # TypeScript strict compilation
+npm run lint          # ESLint rules check
+npm test              # Vitest domain & unit tests
+npm run test:db       # PostgreSQL persistence integration tests
+npm run test:e2e      # Playwright browser end-to-end tests
+npm run build         # Next.js production build
 ```
 
-## Repository map
+## Production Deployment & Operations
 
-- `src/app` — routes and page composition
-- `src/features` — feature-specific UI and orchestration
-- `src/domain` — pure domain types and calculations
-- `src/components` — reusable presentational UI
-- `src/lib` — infrastructure and utilities
-- `docs` — product, architecture, development, domain, and security guidance
-- `resources` — safe, sanitized reference materials and schemas
+ProjectSetu is ready for containerized or bare-metal production deployment with isolated health probes:
 
-Start with the [documentation index](docs/README.md), [architecture overview](docs/architecture/overview.md), [local setup](docs/development/local-setup.md), and [security guidelines](docs/security/security-guidelines.md).
+- **Liveness Probe**: `GET /api/health`
+- **Readiness Probe**: `GET /api/ready`
+- **Database Migration**: `npm run db:migrate`
+- **Database Migration Status**: `npm run db:migrate:status`
+- **Docker Multi-Stage Build**: `docker build -t projectsetu .`
 
-> Never commit secrets, private customer documents, generated customer reports, database dumps, or sensitive personal and financial data. Use environment variables or a secure secret manager for production secrets.
+For detailed production guidance:
+
+- [Production Deployment Guide](docs/deployment/README.md)
+- [Environment Variables Catalog](docs/deployment/environment-variables.md)
+- [CI/CD Pipeline Architecture](docs/deployment/ci-cd.md)
+- [Operations & Incident Runbook](docs/operations/production-runbook.md)
+- [Security Guidelines](docs/security/security-guidelines.md)
+
+> **Security Guarantee**: Never commit real credentials, tokens, session secrets, private keys, or customer documents to version control.

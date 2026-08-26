@@ -1,4 +1,4 @@
-CREATE TABLE "quotation_extractions" (
+CREATE TABLE IF NOT EXISTS "quotation_extractions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
 	"document_id" uuid NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE "quotation_extractions" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "quotation_line_mappings" (
+CREATE TABLE IF NOT EXISTS "quotation_line_mappings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
 	"document_id" uuid NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE "quotation_line_mappings" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "quotation_reviews" (
+CREATE TABLE IF NOT EXISTS "quotation_reviews" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
 	"extraction_id" uuid NOT NULL,
@@ -39,13 +39,42 @@ CREATE TABLE "quotation_reviews" (
 );
 --> statement-breakpoint
 ALTER TABLE "document_metadata" ALTER COLUMN "version" SET DEFAULT '1';--> statement-breakpoint
-ALTER TABLE "document_metadata" ADD COLUMN "original_filename" text;--> statement-breakpoint
-ALTER TABLE "document_metadata" ADD COLUMN "checksum_sha256" text;--> statement-breakpoint
-ALTER TABLE "document_metadata" ADD COLUMN "status" text DEFAULT 'UPLOADED' NOT NULL;--> statement-breakpoint
-ALTER TABLE "document_metadata" ADD COLUMN "superseded_by_id" uuid;--> statement-breakpoint
-ALTER TABLE "quotation_extractions" ADD CONSTRAINT "quotation_extractions_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "quotation_extractions" ADD CONSTRAINT "quotation_extractions_document_id_document_metadata_id_fk" FOREIGN KEY ("document_id") REFERENCES "public"."document_metadata"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "quotation_line_mappings" ADD CONSTRAINT "quotation_line_mappings_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "quotation_line_mappings" ADD CONSTRAINT "quotation_line_mappings_document_id_document_metadata_id_fk" FOREIGN KEY ("document_id") REFERENCES "public"."document_metadata"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "quotation_reviews" ADD CONSTRAINT "quotation_reviews_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "quotation_reviews" ADD CONSTRAINT "quotation_reviews_extraction_id_quotation_extractions_id_fk" FOREIGN KEY ("extraction_id") REFERENCES "public"."quotation_extractions"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "document_metadata" ADD COLUMN IF NOT EXISTS "original_filename" text;--> statement-breakpoint
+ALTER TABLE "document_metadata" ADD COLUMN IF NOT EXISTS "checksum_sha256" text;--> statement-breakpoint
+ALTER TABLE "document_metadata" ADD COLUMN IF NOT EXISTS "status" text DEFAULT 'UPLOADED' NOT NULL;--> statement-breakpoint
+ALTER TABLE "document_metadata" ADD COLUMN IF NOT EXISTS "superseded_by_id" uuid;--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "quotation_extractions" ADD CONSTRAINT "quotation_extractions_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "quotation_extractions" ADD CONSTRAINT "quotation_extractions_document_id_document_metadata_id_fk" FOREIGN KEY ("document_id") REFERENCES "public"."document_metadata"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "quotation_line_mappings" ADD CONSTRAINT "quotation_line_mappings_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "quotation_line_mappings" ADD CONSTRAINT "quotation_line_mappings_document_id_document_metadata_id_fk" FOREIGN KEY ("document_id") REFERENCES "public"."document_metadata"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "quotation_reviews" ADD CONSTRAINT "quotation_reviews_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "quotation_reviews" ADD CONSTRAINT "quotation_reviews_extraction_id_quotation_extractions_id_fk" FOREIGN KEY ("extraction_id") REFERENCES "public"."quotation_extractions"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;

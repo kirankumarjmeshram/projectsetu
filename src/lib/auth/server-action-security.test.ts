@@ -27,7 +27,7 @@ describe("Security & IDOR Isolation Test Suite", () => {
 
   const adminUser: AuthUser = {
     id: "user-admin-uuid",
-    email: "admin@projectsetu.org",
+    email: "admin@example.test",
     name: "Platform Administrator",
     role: "ADMIN",
     isActive: true,

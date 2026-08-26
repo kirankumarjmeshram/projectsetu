@@ -1,17 +1,24 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("ProjectSetu Full Production & Auth Lifecycle E2E Suite", () => {
-  test("Healthcheck Endpoint responds with healthy status and database connectivity", async ({
+  test("Healthcheck & Readiness Endpoints respond with healthy status and database connectivity", async ({
     request,
   }) => {
-    const response = await request.get("/api/health");
-    expect(response.status()).toBe(200);
+    // 1. Test Liveness probe (/api/health)
+    const healthResponse = await request.get("/api/health");
+    expect(healthResponse.status()).toBe(200);
+    const healthData = await healthResponse.json();
+    expect(healthData.status).toBe("healthy");
+    expect(healthData.version).toBe("0.1.0");
+    expect(typeof healthData.uptimeSeconds).toBe("number");
 
-    const data = await response.json();
-    expect(data.status).toBe("healthy");
-    expect(data.database).toBe("connected");
-    expect(data.version).toBe("0.1.0");
-    expect(typeof data.latencyMs).toBe("number");
+    // 2. Test Readiness probe (/api/ready)
+    const readyResponse = await request.get("/api/ready");
+    expect(readyResponse.status()).toBe(200);
+    const readyData = await readyResponse.json();
+    expect(readyData.status).toBe("ready");
+    expect(readyData.database).toBe("connected");
+    expect(typeof readyData.latencyMs).toBe("number");
   });
 
   test("Home page loads with branding, portfolio view, and Sign In trigger", async ({
@@ -63,7 +70,7 @@ test.describe("ProjectSetu Full Production & Auth Lifecycle E2E Suite", () => {
 
     // Should redirect to home page and show user menu
     await page.waitForURL("/", { timeout: 10000 });
-    await expect(page.locator("text=Kiran Sharma").first()).toBeVisible();
+    await expect(page.locator("text=Demo Entrepreneur").first()).toBeVisible();
     await expect(page.locator("text=Entrepreneur").first()).toBeVisible();
   });
 

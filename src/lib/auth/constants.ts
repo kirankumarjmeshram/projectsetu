@@ -1,13 +1,13 @@
 export const DEFAULT_ADMIN_USER = {
-  email: "admin@projectsetu.org",
+  email: "admin@example.test",
   name: "ProjectSetu Admin",
-  password: "Admin@ProjectSetu2026!",
+  password: "Admin@ExampleTest2026!",
   role: "ADMIN" as const,
 };
 
 export const DEFAULT_DEMO_USER = {
-  email: "entrepreneur@projectsetu.org",
-  name: "Kiran Sharma",
-  password: "User@ProjectSetu2026!",
+  email: "user@example.test",
+  name: "Demo Entrepreneur",
+  password: "User@ExampleTest2026!",
   role: "USER" as const,
 };

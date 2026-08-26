@@ -7,7 +7,7 @@ import type { AuthUser } from "./contracts";
 describe("Authorization Policies", () => {
   const adminUser: AuthUser = {
     id: "admin-1",
-    email: "admin@projectsetu.org",
+    email: "admin@example.test",
     name: "Admin User",
     role: "ADMIN",
     isActive: true,
