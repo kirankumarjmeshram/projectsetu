@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 
 import { getProjectsAction } from "@/app/actions/project-actions";
+import { UserMenu } from "@/features/auth/components/user-menu";
 import { ProjectListView } from "@/features/projects/components/project-list-view";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export default async function HomePage() {
             >
               Dashboard
             </Link>
+            <UserMenu />
           </div>
         </div>
       </header>

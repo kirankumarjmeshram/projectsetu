@@ -7,6 +7,7 @@ import {
   runProjectCalculationAction,
   saveProjectDraftAction,
 } from "@/app/actions/project-actions";
+import { UserMenu } from "@/features/auth/components/user-menu";
 import { WizardContainer } from "@/features/project-wizard/components/wizard-container";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,7 @@ export default async function ProjectWizardPage({ params }: ProjectPageProps) {
             >
               ← Back to Projects
             </Link>
+            <UserMenu />
           </div>
         </div>
       </header>

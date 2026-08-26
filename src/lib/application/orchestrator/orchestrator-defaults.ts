@@ -266,9 +266,7 @@ export function createDefaultProjectWizardInput(
     workingCapital: overrides?.workingCapital
       ? { ...defaultWc, ...overrides.workingCapital }
       : defaultWc,
-    loan: overrides?.loan
-      ? { ...defaultLoan, ...overrides.loan }
-      : defaultLoan,
+    loan: overrides?.loan ? { ...defaultLoan, ...overrides.loan } : defaultLoan,
     taxAndReturns: overrides?.taxAndReturns
       ? { ...defaultTax, ...overrides.taxAndReturns }
       : defaultTax,

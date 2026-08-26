@@ -36,10 +36,12 @@ let defaultDatabase: DrizzleDatabase | null = null;
 /** Server-only application database singleton. */
 export function getDb(): DrizzleDatabase {
   if (!defaultDatabase) {
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error("DATABASE_URL is required for persistence operations.");
-    }
+    const rawUrl = process.env.DATABASE_URL?.trim();
+    const testUrl = process.env.TEST_DATABASE_URL?.trim();
+    const defaultLocalUrl =
+      "postgresql://postgres:password@127.0.0.1:5433/projectsetu_test";
+
+    const connectionString = rawUrl || testUrl || defaultLocalUrl;
     defaultDatabase = createDrizzleClient(createPool(connectionString));
   }
   return defaultDatabase;

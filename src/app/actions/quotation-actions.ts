@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { canAccessProject, canMutateProject } from "@/lib/auth/authorization";
+import { getCurrentUser } from "@/lib/auth/session";
 import type { ProjectCostItemInput } from "@/lib/application/orchestrator/orchestrator-types";
 import { getDocumentStorage } from "@/lib/documents/storage";
 import { buildQuotationComparisonMatrix } from "@/lib/documents/quotation/comparison";
@@ -22,6 +24,7 @@ import {
 import { getDb } from "@/lib/persistence/db";
 import {
   PgDocumentMetadataRepository,
+  PgProjectRepository,
   PgQuotationExtractionRepository,
   PgQuotationLineMappingRepository,
   PgQuotationReviewRepository,
@@ -41,7 +44,19 @@ export async function createManualQuotationAction(input: {
   isInterstate?: boolean;
 }) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(input.projectId);
+
+    if (existingProject && user && !canMutateProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to add quotations to this project.",
+      };
+    }
+
     const docRepo = new PgDocumentMetadataRepository(db);
     const extractionRepo = new PgQuotationExtractionRepository(db);
     const reviewRepo = new PgQuotationReviewRepository(db);
@@ -59,8 +74,8 @@ export async function createManualQuotationAction(input: {
     }
 
     const normalized = buildManualQuotation({
-      projectId: input.projectId,
       documentId: docId,
+      projectId: input.projectId,
       supplier: input.supplier,
       quotationNumber: input.quotationNumber,
       quotationDate: input.quotationDate,
@@ -77,9 +92,9 @@ export async function createManualQuotationAction(input: {
       documentId: docId,
       extractionProvider: "MANUAL_ENTRY",
       status: "APPROVED",
-      rawData: { manualInput: true },
+      rawData: { input },
       normalizedData: normalized,
-      confidenceScore: "1.00",
+      confidenceScore: "1.0",
     });
 
     const review = await reviewRepo.create({
@@ -106,15 +121,26 @@ export async function createManualQuotationAction(input: {
 
 export async function extractQuotationAction(documentId: string) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
     const docRepo = new PgDocumentMetadataRepository(db);
     const extractionRepo = new PgQuotationExtractionRepository(db);
+    const projectRepo = new PgProjectRepository(db);
 
     const doc = await docRepo.findById(documentId);
     if (!doc || !doc.storageKey) {
       return {
         success: false,
         error: "Document not found or has no attached file.",
+      };
+    }
+
+    const existingProject = await projectRepo.findById(doc.projectId);
+    if (existingProject && user && !canMutateProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to extract quotations for this project.",
       };
     }
 
@@ -175,7 +201,19 @@ export async function saveQuotationReviewAction(
   reviewerNotes?: string,
 ) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(projectId);
+
+    if (existingProject && user && !canMutateProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to review quotations for this project.",
+      };
+    }
+
     const reviewRepo = new PgQuotationReviewRepository(db);
 
     const review = await reviewRepo.create({
@@ -201,7 +239,19 @@ export async function approveQuotationAction(
   reviewerNotes?: string,
 ) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(projectId);
+
+    if (existingProject && user && !canMutateProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to approve quotations for this project.",
+      };
+    }
+
     const reviewRepo = new PgQuotationReviewRepository(db);
     const extractionRepo = new PgQuotationExtractionRepository(db);
     const docRepo = new PgDocumentMetadataRepository(db);
@@ -232,7 +282,20 @@ export async function mapQuotationLinesAction(
   existingCostItems: readonly ProjectCostItemInput[],
 ) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(quotation.projectId);
+
+    if (existingProject && user && !canMutateProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to map quotations for this project.",
+        costItems: existingCostItems,
+      };
+    }
+
     const mappingRepo = new PgQuotationLineMappingRepository(db);
     const existingMappings = await mappingRepo.findByProjectId(
       quotation.projectId,
@@ -286,7 +349,20 @@ export async function mapQuotationLinesAction(
 
 export async function getQuotationMappingsAction(projectId: string) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(projectId);
+
+    if (existingProject && user && !canAccessProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to view quotation mappings for this project.",
+        mappings: [],
+      };
+    }
+
     const mappingRepo = new PgQuotationLineMappingRepository(db);
     const mappings = await mappingRepo.findByProjectId(projectId);
     return { success: true, mappings };
@@ -301,7 +377,23 @@ export async function getQuotationMappingsAction(projectId: string) {
 
 export async function getQuotationDetailsAction(documentId: string) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const docRepo = new PgDocumentMetadataRepository(db);
+    const doc = await docRepo.findById(documentId);
+
+    if (doc) {
+      const projectRepo = new PgProjectRepository(db);
+      const existingProject = await projectRepo.findById(doc.projectId);
+      if (existingProject && user && !canAccessProject(user, existingProject)) {
+        return {
+          success: false,
+          error:
+            "Access denied. You do not have permission to view this quotation.",
+        };
+      }
+    }
+
     const extractionRepo = new PgQuotationExtractionRepository(db);
     const reviewRepo = new PgQuotationReviewRepository(db);
 
@@ -333,7 +425,19 @@ export async function compareQuotationsAction(
   documentIds: readonly string[],
 ) {
   try {
+    const user = await getCurrentUser();
     const db = getDb();
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(projectId);
+
+    if (existingProject && user && !canAccessProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to compare quotations for this project.",
+      };
+    }
+
     const extractionRepo = new PgQuotationExtractionRepository(db);
     const reviewRepo = new PgQuotationReviewRepository(db);
 

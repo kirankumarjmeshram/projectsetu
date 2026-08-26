@@ -1,3 +1,6 @@
+export { users } from "./users";
+export { sessions } from "./sessions";
+export { adminAuditLogs } from "./admin-audit-logs";
 export { projects } from "./projects";
 export { projectInputSnapshots } from "./project-input-snapshots";
 export { programSelections } from "./program-selections";

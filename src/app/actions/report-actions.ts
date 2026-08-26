@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { canAccessProject, canMutateProject } from "@/lib/auth/authorization";
+import { getCurrentUser } from "@/lib/auth/session";
 import type {
   ProjectCalculationResult,
   ProjectWizardInput,
@@ -59,9 +61,11 @@ async function loadReportSources(
     );
   const calculationSnapshot = (
     await new PgCalculationSnapshotRepository(db).findByCalculationRunId(run.id)
-  ).find((snapshot) => snapshot.snapshotType === "FULL_FINANCIAL_PROJECTIONS");
-  if (!calculationSnapshot || calculationSnapshot.projectId !== projectId)
-    throw new Error("The authoritative calculation snapshot is missing.");
+  )[0];
+  if (!calculationSnapshot)
+    throw new Error(
+      "Authoritative calculation output snapshot is missing for this run.",
+    );
   const fundingSnapshot = (
     await new PgFundingSnapshotRepository(db).findByCalculationRunId(run.id)
   ).find((snapshot) => snapshot.snapshotType === "FUNDING_COMPOSER");
@@ -134,9 +138,23 @@ async function loadReportSources(
 
 export async function buildReportPreviewAction(projectId: string) {
   try {
-    const reports = await new PgReportMetadataRepository(
-      getDb(),
-    ).findByProjectId(projectId);
+    const user = await getCurrentUser();
+    const db = getDb();
+    const project = await new PgProjectRepository(db).findById(projectId);
+    if (!project)
+      return { success: false as const, error: "Project not found." };
+
+    if (user && !canAccessProject(user, project)) {
+      return {
+        success: false as const,
+        error:
+          "Access denied. You do not have permission to view reports for this project.",
+      };
+    }
+
+    const reports = await new PgReportMetadataRepository(db).findByProjectId(
+      projectId,
+    );
     const { model, validation } = await loadReportSources(
       projectId,
       crypto.randomUUID(),
@@ -152,7 +170,19 @@ export async function generateReportVersionAction(
   projectId: string,
   overrides?: NarrativeOverrides,
 ) {
+  const user = await getCurrentUser();
   const db = getDb();
+  const project = await new PgProjectRepository(db).findById(projectId);
+  if (!project) return { success: false as const, error: "Project not found." };
+
+  if (user && !canMutateProject(user, project)) {
+    return {
+      success: false as const,
+      error:
+        "Access denied. You do not have permission to generate reports for this project.",
+    };
+  }
+
   const reportRepo = new PgReportMetadataRepository(db);
   const documentRepo = new PgDocumentMetadataRepository(db);
   const existing = await reportRepo.findByProjectId(projectId);
@@ -235,9 +265,21 @@ export async function generateReportVersionAction(
 
 export async function listReportVersionsAction(projectId: string) {
   try {
+    const user = await getCurrentUser();
+    const db = getDb();
+    const project = await new PgProjectRepository(db).findById(projectId);
+    if (project && user && !canAccessProject(user, project)) {
+      return {
+        success: false as const,
+        error:
+          "Access denied. You do not have permission to view reports for this project.",
+        reports: [],
+      };
+    }
+
     return {
       success: true as const,
-      reports: await new PgReportMetadataRepository(getDb()).findByProjectId(
+      reports: await new PgReportMetadataRepository(db).findByProjectId(
         projectId,
       ),
     };
@@ -254,9 +296,17 @@ export async function getReportVersionAction(
   projectId: string,
   reportId: string,
 ) {
-  const report = await new PgReportMetadataRepository(getDb()).findById(
-    reportId,
-  );
+  const user = await getCurrentUser();
+  const db = getDb();
+  const project = await new PgProjectRepository(db).findById(projectId);
+  if (project && user && !canAccessProject(user, project)) {
+    return {
+      success: false as const,
+      error: "Access denied. You do not have permission to view this report.",
+    };
+  }
+
+  const report = await new PgReportMetadataRepository(db).findById(reportId);
   if (!report || report.projectId !== projectId)
     return {
       success: false as const,
@@ -274,7 +324,17 @@ export async function downloadReportArtifactAction(
   reportId: string,
   format: "PDF" | "DOCX" | "XLSX",
 ) {
+  const user = await getCurrentUser();
   const db = getDb();
+  const project = await new PgProjectRepository(db).findById(projectId);
+  if (project && user && !canAccessProject(user, project)) {
+    return {
+      success: false as const,
+      error:
+        "Access denied. You do not have permission to download reports for this project.",
+    };
+  }
+
   const report = await new PgReportMetadataRepository(db).findById(reportId);
   if (!report || report.projectId !== projectId || report.status !== "READY")
     return {

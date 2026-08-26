@@ -1,7 +1,8 @@
-import { eq, and } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
+
+import type { DrizzleDatabase } from "../db";
 import { generateId } from "../id";
 import { projects } from "../schema/projects";
-import type { DrizzleDatabase } from "../db";
 import type {
   CreateProjectInput,
   PersistedProject,
@@ -31,6 +32,7 @@ export class PgProjectRepository implements ProjectRepository {
         projectionPeriodYears: input.projectionPeriodYears,
         implementationFrom: input.implementationFrom ?? null,
         implementationUntil: input.implementationUntil ?? null,
+        ownerId: input.ownerId ?? null,
         revision: 1,
         createdAt: now,
         updatedAt: now,
@@ -54,7 +56,17 @@ export class PgProjectRepository implements ProjectRepository {
     const rows = await this.db
       .select()
       .from(projects)
-      .orderBy(projects.createdAt);
+      .orderBy(desc(projects.createdAt));
+
+    return rows.map((row) => this.toPersistedProject(row));
+  }
+
+  async findByOwnerId(ownerId: string): Promise<readonly PersistedProject[]> {
+    const rows = await this.db
+      .select()
+      .from(projects)
+      .where(eq(projects.ownerId, ownerId))
+      .orderBy(desc(projects.createdAt));
 
     return rows.map((row) => this.toPersistedProject(row));
   }
@@ -89,6 +101,7 @@ export class PgProjectRepository implements ProjectRepository {
       updateValues.implementationUntil = input.implementationUntil;
     if (input.currentInputSnapshotId !== undefined)
       updateValues.currentInputSnapshotId = input.currentInputSnapshotId;
+    if (input.ownerId !== undefined) updateValues.ownerId = input.ownerId;
 
     const rows = await this.db
       .update(projects)
@@ -143,6 +156,7 @@ export class PgProjectRepository implements ProjectRepository {
       implementationFrom: row.implementationFrom,
       implementationUntil: row.implementationUntil,
       currentInputSnapshotId: row.currentInputSnapshotId,
+      ownerId: row.ownerId,
       revision: row.revision,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

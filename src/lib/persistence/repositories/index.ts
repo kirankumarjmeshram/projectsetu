@@ -13,6 +13,9 @@ export {
   PgQuotationReviewRepository,
   PgQuotationLineMappingRepository,
 } from "./pg-quotation-repository";
+export { PgUserRepository } from "./pg-user-repository";
+export { PgSessionRepository } from "./pg-session-repository";
+export { PgAdminAuditRepository } from "./pg-admin-audit-repository";
 
 export type {
   CalculationRunRepository,
@@ -52,4 +55,13 @@ export type {
   CreateQuotationLineMappingInput,
   PersistedQuotationLineMapping,
   QuotationLineMappingRepository,
+  PersistedUser,
+  CreateUserInput,
+  UserRepository,
+  PersistedSession,
+  CreateSessionInput,
+  SessionRepository,
+  PersistedAdminAuditLog,
+  CreateAdminAuditLogInput,
+  AdminAuditRepository,
 } from "./types";
