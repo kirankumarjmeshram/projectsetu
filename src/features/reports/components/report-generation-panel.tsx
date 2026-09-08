@@ -22,17 +22,26 @@ export function ReportGenerationPanel({ projectId }: { projectId: string }) {
     [],
   );
   const [message, setMessage] = useState("");
+  const [currentInputSnapshotId, setCurrentInputSnapshotId] = useState<
+    string | null
+  >(null);
   const [overrides, setOverrides] = useState<NarrativeOverrides>({});
   const [pending, startTransition] = useTransition();
 
   const refreshHistory = async () => {
     const result = await listReportVersionsAction(projectId);
-    if (result.success) setReports(result.reports);
+    if (result.success) {
+      setReports(result.reports);
+      setCurrentInputSnapshotId(result.currentInputSnapshotId);
+    }
   };
   useEffect(() => {
     let active = true;
     void listReportVersionsAction(projectId).then((result) => {
-      if (active && result.success) setReports(result.reports);
+      if (active && result.success) {
+        setReports(result.reports);
+        setCurrentInputSnapshotId(result.currentInputSnapshotId);
+      }
     });
     return () => {
       active = false;
@@ -206,12 +215,20 @@ export function ReportGenerationPanel({ projectId }: { projectId: string }) {
           <p className="text-xs text-slate-500">No report versions yet.</p>
         ) : (
           <div className="overflow-x-auto">
+            {reports[0]?.inputSnapshotId &&
+              currentInputSnapshotId &&
+              reports[0].inputSnapshotId !== currentInputSnapshotId && (
+                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                  Project inputs have changed since the latest report was
+                  generated. Existing versions remain reproducible; preview and
+                  generate a new version when ready.
+                </div>
+              )}
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-slate-200">
                   <th className="p-2">Version</th>
                   <th className="p-2">Generated</th>
-                  <th className="p-2">Input Snapshot</th>
                   <th className="p-2">Status</th>
                   <th className="p-2">Downloads</th>
                 </tr>
@@ -222,9 +239,6 @@ export function ReportGenerationPanel({ projectId }: { projectId: string }) {
                     <td className="p-2">v{report.reportVersion}</td>
                     <td className="p-2">
                       {report.generatedAt?.toLocaleString() ?? "—"}
-                    </td>
-                    <td className="p-2 font-mono">
-                      {report.inputSnapshotId?.slice(0, 8) ?? "—"}
                     </td>
                     <td className="p-2">{report.status}</td>
                     <td className="flex gap-1 p-2">

@@ -103,7 +103,7 @@ export function Step2ApplicantPromoter({
             }
           >
             <option value="MALE">Male</option>
-            <option value="FEMALE">Female (Special Category Subsidy)</option>
+            <option value="FEMALE">Female</option>
             <option value="OTHER">Other</option>
           </select>
         </div>
@@ -183,6 +183,52 @@ export function Step2ApplicantPromoter({
           </div>
         </div>
       </div>
+
+      <details className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+        <summary className="cursor-pointer text-sm font-bold text-slate-800">
+          Optional promoter background for the DPR
+        </summary>
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="text-xs font-semibold text-slate-700">
+              Background and Relevant Experience
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={value.background ?? ""}
+              onChange={(e) =>
+                onChange({ ...value, background: e.target.value })
+              }
+              placeholder="Applicant-provided professional or business background"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Existing Activity
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={value.existingActivity ?? ""}
+              onChange={(e) =>
+                onChange({ ...value, existingActivity: e.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Address / Location
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={value.address ?? ""}
+              onChange={(e) => onChange({ ...value, address: e.target.value })}
+            />
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

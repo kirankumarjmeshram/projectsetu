@@ -3,7 +3,6 @@
 import React, { useState, useTransition } from "react";
 
 import { signInAction } from "@/app/actions/auth-actions";
-import { DEFAULT_ADMIN_USER, DEFAULT_DEMO_USER } from "@/lib/auth/constants";
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -34,19 +33,6 @@ export function SignInModal({ isOpen, onClose, onSuccess }: SignInModalProps) {
     });
   };
 
-  const handleQuickSignIn = (demoEmail: string, demoPass: string) => {
-    setError(null);
-    startTransition(async () => {
-      const res = await signInAction({ email: demoEmail, password: demoPass });
-      if (res.success) {
-        onSuccess?.();
-        onClose();
-      } else {
-        setError(res.error || "Failed to sign in.");
-      }
-    });
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10">
@@ -68,42 +54,7 @@ export function SignInModal({ isOpen, onClose, onSuccess }: SignInModalProps) {
           </button>
         </div>
 
-        {/* Quick Demo Login Badges */}
-        <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
-          <p className="mb-2 text-xs font-semibold text-indigo-900">
-            🚀 Instant Demo Credentials:
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() =>
-                handleQuickSignIn(
-                  DEFAULT_DEMO_USER.email,
-                  DEFAULT_DEMO_USER.password,
-                )
-              }
-              className="flex-1 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
-            >
-              👤 Entrepreneur
-            </button>
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={() =>
-                handleQuickSignIn(
-                  DEFAULT_ADMIN_USER.email,
-                  DEFAULT_ADMIN_USER.password,
-                )
-              }
-              className="flex-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-900 disabled:opacity-50"
-            >
-              🛡️ Admin Console
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSignIn} className="mt-4 space-y-4">
+        <form onSubmit={handleSignIn} className="mt-6 space-y-4">
           {error && (
             <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
               {error}

@@ -3,6 +3,7 @@ import type {
   ReportValidationIssue,
   ReportValidationResult,
 } from "./contracts";
+import { ProjectSetuDecimal } from "@/domain/shared/decimal";
 
 export function validateDprReport(
   model: DprReportModel,
@@ -29,6 +30,37 @@ export function validateDprReport(
         "Project, input snapshot and calculation run references are required.",
     });
   }
+  if (
+    !model.calculation.projectCost ||
+    new ProjectSetuDecimal(
+      model.calculation.projectCost.totalProjectCost,
+    ).isZero()
+  ) {
+    issues.push({
+      code: "ZERO_PROJECT_COST",
+      severity: "BLOCKING",
+      message: "A meaningful project cost is required before DPR export.",
+      sectionId: "project-cost",
+    });
+  }
+  if (
+    !model.calculation.projection ||
+    model.project.revenueProducts.length === 0
+  ) {
+    issues.push({
+      code: "MISSING_REVENUE_ASSUMPTIONS",
+      severity: "BLOCKING",
+      message: "At least one product or service revenue line is required.",
+      sectionId: "revenue-projection",
+    });
+  }
+  if (!model.project.applicant.name.trim())
+    issues.push({
+      code: "MISSING_PROMOTER_NAME",
+      severity: "WARNING",
+      message: "Promoter or applicant name has not been provided.",
+      sectionId: "applicant-profile",
+    });
   if (
     model.calculation.projectId !== model.identity.projectId ||
     model.project.project.id !== model.identity.projectId

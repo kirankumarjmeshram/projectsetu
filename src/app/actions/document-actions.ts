@@ -35,7 +35,7 @@ export async function uploadDocumentAction(formData: FormData) {
       return { success: false, error: "Project not found." };
     }
 
-    if (user && !canMutateProject(user, existingProject)) {
+    if (!user || !canMutateProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -97,7 +97,10 @@ export async function listProjectDocumentsAction(projectId: string) {
     const projectRepo = new PgProjectRepository(db);
 
     const existingProject = await projectRepo.findById(projectId);
-    if (existingProject && user && !canAccessProject(user, existingProject)) {
+    if (!existingProject) {
+      return { success: false, error: "Project not found.", documents: [] };
+    }
+    if (!user || !canAccessProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -130,7 +133,7 @@ export async function getDocumentFileAction(documentId: string) {
 
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(doc.projectId);
-    if (existingProject && user && !canAccessProject(user, existingProject)) {
+    if (!existingProject || !user || !canAccessProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -172,7 +175,7 @@ export async function archiveDocumentAction(documentId: string) {
 
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(doc.projectId);
-    if (existingProject && user && !canMutateProject(user, existingProject)) {
+    if (!existingProject || !user || !canMutateProject(user, existingProject)) {
       return {
         success: false,
         error:

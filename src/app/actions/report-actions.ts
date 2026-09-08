@@ -10,6 +10,7 @@ import type {
 } from "@/lib/application/orchestrator/orchestrator-types";
 import type { NormalizedQuotation } from "@/lib/documents/quotation/contracts";
 import { getDb } from "@/lib/persistence/db";
+import { logger } from "@/lib/logging/logger";
 import {
   PgCalculationRunRepository,
   PgCalculationSnapshotRepository,
@@ -31,6 +32,7 @@ import {
 } from "@/lib/reports/contracts";
 import { renderDocx, renderExcel, renderPdf } from "@/lib/reports/renderers";
 import { getReportArtifactStorage } from "@/lib/reports/storage";
+import { selectLatestCurrentCalculationRun } from "@/lib/reports/source-selection";
 import { validateDprReport } from "@/lib/reports/validation";
 
 async function loadReportSources(
@@ -42,15 +44,13 @@ async function loadReportSources(
   const db = getDb();
   const project = await new PgProjectRepository(db).findById(projectId);
   if (!project) throw new Error("Project not found.");
-  const runs = (
-    await new PgCalculationRunRepository(db).findByProjectId(projectId)
-  )
-    .filter((run) => run.status === "COMPLETED")
-    .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
-  const run = runs[0];
+  const run = selectLatestCurrentCalculationRun(
+    await new PgCalculationRunRepository(db).findByProjectId(projectId),
+    project.currentInputSnapshotId,
+  );
   if (!run)
     throw new Error(
-      "A completed, persisted calculation run is required before report generation.",
+      "Recalculate the current saved project inputs before report generation.",
     );
   const inputSnapshot = await new PgInputSnapshotRepository(db).findById(
     run.inputSnapshotId,
@@ -144,7 +144,7 @@ export async function buildReportPreviewAction(projectId: string) {
     if (!project)
       return { success: false as const, error: "Project not found." };
 
-    if (user && !canAccessProject(user, project)) {
+    if (!user || !canAccessProject(user, project)) {
       return {
         success: false as const,
         error:
@@ -162,7 +162,12 @@ export async function buildReportPreviewAction(projectId: string) {
     );
     return { success: true as const, model, validation };
   } catch (error) {
-    return { success: false as const, error: (error as Error).message };
+    logger.error("DPR report preview failed", error, { projectId });
+    return {
+      success: false as const,
+      error:
+        "The DPR preview could not be prepared. Save and recalculate the current project inputs, then retry.",
+    };
   }
 }
 
@@ -175,7 +180,7 @@ export async function generateReportVersionAction(
   const project = await new PgProjectRepository(db).findById(projectId);
   if (!project) return { success: false as const, error: "Project not found." };
 
-  if (user && !canMutateProject(user, project)) {
+  if (!user || !canMutateProject(user, project)) {
     return {
       success: false as const,
       error:
@@ -259,7 +264,15 @@ export async function generateReportVersionAction(
     return { success: true as const, report, validation };
   } catch (error) {
     await reportRepo.update(reportId, { status: "FAILED" });
-    return { success: false as const, error: (error as Error).message };
+    logger.error("DPR report generation failed", error, {
+      projectId,
+      reportId,
+    });
+    return {
+      success: false as const,
+      error:
+        "The DPR could not be generated. Verify the project inputs and try again.",
+    };
   }
 }
 
@@ -268,7 +281,13 @@ export async function listReportVersionsAction(projectId: string) {
     const user = await getCurrentUser();
     const db = getDb();
     const project = await new PgProjectRepository(db).findById(projectId);
-    if (project && user && !canAccessProject(user, project)) {
+    if (!project)
+      return {
+        success: false as const,
+        error: "Project not found.",
+        reports: [],
+      };
+    if (!user || !canAccessProject(user, project)) {
       return {
         success: false as const,
         error:
@@ -282,11 +301,13 @@ export async function listReportVersionsAction(projectId: string) {
       reports: await new PgReportMetadataRepository(db).findByProjectId(
         projectId,
       ),
+      currentInputSnapshotId: project.currentInputSnapshotId,
     };
   } catch (error) {
+    logger.error("DPR report history lookup failed", error, { projectId });
     return {
       success: false as const,
-      error: (error as Error).message,
+      error: "Report history could not be loaded. Please retry.",
       reports: [],
     };
   }
@@ -299,7 +320,8 @@ export async function getReportVersionAction(
   const user = await getCurrentUser();
   const db = getDb();
   const project = await new PgProjectRepository(db).findById(projectId);
-  if (project && user && !canAccessProject(user, project)) {
+  if (!project) return { success: false as const, error: "Project not found." };
+  if (!user || !canAccessProject(user, project)) {
     return {
       success: false as const,
       error: "Access denied. You do not have permission to view this report.",
@@ -327,7 +349,8 @@ export async function downloadReportArtifactAction(
   const user = await getCurrentUser();
   const db = getDb();
   const project = await new PgProjectRepository(db).findById(projectId);
-  if (project && user && !canAccessProject(user, project)) {
+  if (!project) return { success: false as const, error: "Project not found." };
+  if (!user || !canAccessProject(user, project)) {
     return {
       success: false as const,
       error:

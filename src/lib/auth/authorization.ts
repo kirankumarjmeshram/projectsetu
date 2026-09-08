@@ -30,7 +30,7 @@ export class ProjectNotFoundError extends Error {
  * Rules:
  * 1. ADMIN users can access all projects.
  * 2. Regular users can access projects they own.
- * 3. Unowned projects (transitional / demo data where ownerId is null) are accessible by all authenticated users.
+ * 3. Unowned transitional projects are accessible only to administrators.
  */
 export function canAccessProject(
   user: AuthUser,
@@ -40,18 +40,14 @@ export function canAccessProject(
     return true;
   }
 
-  if (!project.ownerId) {
-    return true;
-  }
-
-  return project.ownerId === user.id;
+  return Boolean(project.ownerId) && project.ownerId === user.id;
 }
 
 /**
  * Checks whether a user has write/mutation access to a project.
  * Rules:
  * 1. ADMIN users can mutate all projects.
- * 2. Regular users can mutate only projects they own (or claim an unowned project).
+ * 2. Regular users can mutate only projects they own.
  */
 export function canMutateProject(
   user: AuthUser,
@@ -61,11 +57,15 @@ export function canMutateProject(
     return true;
   }
 
-  if (!project.ownerId) {
-    return true;
-  }
+  return Boolean(project.ownerId) && project.ownerId === user.id;
+}
 
-  return project.ownerId === user.id;
+/** Prevents browser-supplied resource IDs from being cross-linked to a project. */
+export function belongsToProject(
+  resource: { readonly projectId: string },
+  projectId: string,
+): boolean {
+  return resource.projectId === projectId;
 }
 
 /**

@@ -41,12 +41,25 @@ export async function startTestPostgres(port = 5433) {
   const verRes = await client.query("SELECT version();");
   const version = verRes.rows[0].version as string;
 
-  // Check if projectsetu_test exists, if not create it
+  // The test database must be UTF-8 even when an older persistent Windows
+  // cluster was initialized with a legacy system code page.
   const dbCheck = await client.query(
-    "SELECT 1 FROM pg_database WHERE datname = 'projectsetu_test'",
+    "SELECT pg_encoding_to_char(encoding) AS encoding FROM pg_database WHERE datname = 'projectsetu_test'",
   );
+  if (dbCheck.rows[0] && dbCheck.rows[0].encoding !== "UTF8") {
+    await client.query(
+      "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'projectsetu_test' AND pid <> pg_backend_pid()",
+    );
+    await client.query("DROP DATABASE projectsetu_test");
+  }
   if (dbCheck.rows.length === 0) {
-    await client.query("CREATE DATABASE projectsetu_test;");
+    await client.query(
+      "CREATE DATABASE projectsetu_test WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C'",
+    );
+  } else if (dbCheck.rows[0].encoding !== "UTF8") {
+    await client.query(
+      "CREATE DATABASE projectsetu_test WITH TEMPLATE template0 ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C'",
+    );
   }
 
   await client.end();

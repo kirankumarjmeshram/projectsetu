@@ -1,13 +1,17 @@
 import React from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { getProjectsAction } from "@/app/actions/project-actions";
 import { UserMenu } from "@/features/auth/components/user-menu";
+import { getCurrentUser } from "@/lib/auth/session";
 import { ProjectListView } from "@/features/projects/components/project-list-view";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   const result = await getProjectsAction();
   const projects = result.projects || [];
 
@@ -25,7 +29,7 @@ export default async function HomePage() {
                 ProjectSetu
               </span>
               <span className="block text-[10px] font-bold text-emerald-800">
-                Detailed Project Report & MSME Scheme Engine
+                Bankable DPR & MSME Scheme Workspace
               </span>
             </div>
           </div>

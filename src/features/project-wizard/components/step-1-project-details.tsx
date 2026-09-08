@@ -112,10 +112,10 @@ export function Step1ProjectDetails({
             }
           >
             <option value="RURAL">
-              Rural (Eligible for highest subsidy brackets)
+              Rural (subject to scheme verification)
             </option>
             <option value="URBAN">Urban</option>
-            <option value="UNCLASSIFIED">Semi-Urban / Unclassified</option>
+            <option value="UNCLASSIFIED">Not classified yet</option>
           </select>
         </div>
 
@@ -150,7 +150,7 @@ export function Step1ProjectDetails({
               onChange({
                 ...value,
                 address: {
-                  lines: value.address?.lines ?? ["Industrial Area"],
+                  lines: value.address?.lines ?? [],
                   district: value.address?.district ?? "",
                   villageTownCity: value.address?.villageTownCity,
                   pinCode: value.address?.pinCode,
@@ -174,7 +174,7 @@ export function Step1ProjectDetails({
               onChange({
                 ...value,
                 address: {
-                  lines: value.address?.lines ?? ["Industrial Area"],
+                  lines: value.address?.lines ?? [],
                   state: value.address?.state ?? "",
                   villageTownCity: value.address?.villageTownCity,
                   pinCode: value.address?.pinCode,
@@ -198,7 +198,7 @@ export function Step1ProjectDetails({
               onChange({
                 ...value,
                 address: {
-                  lines: value.address?.lines ?? ["Industrial Area"],
+                  lines: value.address?.lines ?? [],
                   state: value.address?.state ?? "",
                   district: value.address?.district ?? "",
                   villageTownCity: value.address?.villageTownCity,
@@ -210,6 +210,73 @@ export function Step1ProjectDetails({
           />
         </div>
       </div>
+
+      <details className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+        <summary className="cursor-pointer text-sm font-bold text-slate-800">
+          Optional DPR project details
+        </summary>
+        <p className="mt-1 text-xs text-slate-500">
+          These facts improve the written DPR. Leave unknown information blank;
+          ProjectSetu will not invent it.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Enterprise Name
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={value.enterpriseName ?? ""}
+              onChange={(e) =>
+                onChange({ ...value, enterpriseName: e.target.value })
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700">
+              Nature of Business
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={value.natureOfBusiness ?? ""}
+              onChange={(e) =>
+                onChange({ ...value, natureOfBusiness: e.target.value })
+              }
+              placeholder="Manufacturing, service, trading, or allied activity"
+            />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="text-xs font-semibold text-slate-700">
+              Project Description
+            </label>
+            <textarea
+              rows={4}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={value.projectDescription ?? ""}
+              onChange={(e) =>
+                onChange({ ...value, projectDescription: e.target.value })
+              }
+              placeholder="Describe the proposed activity using verified applicant-provided facts."
+            />
+          </div>
+          <div className="space-y-1.5 md:col-span-2">
+            <label className="text-xs font-semibold text-slate-700">
+              Report Purpose
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={value.reportPurpose ?? ""}
+              onChange={(e) =>
+                onChange({ ...value, reportPurpose: e.target.value })
+              }
+              placeholder="For example: term-loan appraisal or project feasibility"
+            />
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

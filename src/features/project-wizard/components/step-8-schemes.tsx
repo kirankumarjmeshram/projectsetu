@@ -166,25 +166,30 @@ function DynamicFieldInput({
 
   if (field.type === "BOOLEAN") {
     return (
-      <div className="flex items-center gap-2 pt-2 md:col-span-2">
-        <input
-          type="checkbox"
-          id={field.key}
-          className="h-4 w-4 rounded-sm border-slate-300 text-emerald-600"
-          checked={Boolean(val)}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-        <label
-          htmlFor={field.key}
-          className="cursor-pointer text-xs font-semibold text-slate-800"
-        >
+      <div className="space-y-1.5 md:col-span-2">
+        <label className="text-xs font-semibold text-slate-800">
           {field.label}
-          {field.description && (
-            <span className="block text-[11px] font-normal text-slate-500">
-              {field.description}
-            </span>
-          )}
         </label>
+        <select
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs"
+          value={currentValue === undefined ? "" : String(currentValue)}
+          onChange={(event) =>
+            onChange(
+              event.target.value === ""
+                ? undefined
+                : event.target.value === "true",
+            )
+          }
+        >
+          <option value="">Information required</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+        {field.description && (
+          <span className="block text-[11px] text-slate-500">
+            {field.description}
+          </span>
+        )}
       </div>
     );
   }
@@ -228,6 +233,7 @@ function DynamicFieldInput({
           value={String(val)}
           onChange={(e) => onChange(e.target.value)}
         >
+          <option value="">Information required</option>
           {field.options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}

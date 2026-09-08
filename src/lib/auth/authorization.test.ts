@@ -86,9 +86,9 @@ describe("Authorization Policies", () => {
       expect(canAccessProject(adminUser, projectOwnedByA)).toBe(true);
     });
 
-    it("allows all authenticated users to read unowned demo projects", () => {
-      expect(canAccessProject(userA, projectUnowned)).toBe(true);
-      expect(canAccessProject(userB, projectUnowned)).toBe(true);
+    it("reserves transitional unowned projects for administrators", () => {
+      expect(canAccessProject(userA, projectUnowned)).toBe(false);
+      expect(canAccessProject(userB, projectUnowned)).toBe(false);
       expect(canAccessProject(adminUser, projectUnowned)).toBe(true);
     });
   });
@@ -106,8 +106,9 @@ describe("Authorization Policies", () => {
       expect(canMutateProject(adminUser, projectOwnedByA)).toBe(true);
     });
 
-    it("allows authenticated user to mutate unowned project", () => {
-      expect(canMutateProject(userA, projectUnowned)).toBe(true);
+    it("denies a regular user mutation access to an unowned project", () => {
+      expect(canMutateProject(userA, projectUnowned)).toBe(false);
+      expect(canMutateProject(adminUser, projectUnowned)).toBe(true);
     });
   });
 });

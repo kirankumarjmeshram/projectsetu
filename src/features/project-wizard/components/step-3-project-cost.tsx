@@ -26,20 +26,27 @@ interface Step3ProjectCostProps {
 }
 
 const COST_CATEGORIES = [
+  { label: "Land", value: "LAND" },
   { label: "Land & Site Development", value: "LAND_DEVELOPMENT" },
   { label: "Factory Building & Civil Works", value: "BUILDING" },
+  { label: "Other Civil Works", value: "CIVIL_WORKS" },
   { label: "Plant, Machinery & Main Equipment", value: "PLANT_AND_MACHINERY" },
+  { label: "Other Equipment", value: "EQUIPMENT" },
   {
     label: "Electrical Installation & Power",
     value: "ELECTRICAL_INSTALLATION",
   },
   { label: "Furniture, Fixtures & Office Equipment", value: "FURNITURE" },
+  { label: "Vehicles", value: "VEHICLE" },
+  { label: "Computers & IT", value: "COMPUTERS_AND_IT" },
   {
     label: "Preliminary & Pre-Operative Expenses",
     value: "PREOPERATIVE_EXPENSES",
   },
   { label: "Margin for Working Capital", value: "MARGIN_FOR_WORKING_CAPITAL" },
   { label: "Contingencies & Miscellaneous", value: "CONTINGENCIES" },
+  { label: "Technical Know-how", value: "TECHNICAL_KNOW_HOW" },
+  { label: "Other Project Cost", value: "OTHER" },
 ];
 
 export function Step3ProjectCost({
@@ -64,9 +71,9 @@ export function Step3ProjectCost({
   const handleAddItem = () => {
     const newItem: ProjectCostItemInput = {
       id: generateId(),
-      description: "New Equipment / Cost Item",
+      description: "",
       category: "PLANT_AND_MACHINERY",
-      amount: "100000.00",
+      amount: "0",
     };
     onChange([...items, newItem]);
   };

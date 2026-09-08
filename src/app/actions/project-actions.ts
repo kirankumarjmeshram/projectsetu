@@ -15,7 +15,7 @@ import type {
   ProjectWizardInput,
 } from "@/lib/application/orchestrator/orchestrator-types";
 import { orchestrateProjectCalculation } from "@/lib/application/orchestrator/calculation-orchestrator";
-import { createDefaultProjectWizardInput } from "@/lib/application/orchestrator/orchestrator-defaults";
+import { createEmptyProjectWizardInput } from "@/lib/application/orchestrator/orchestrator-defaults";
 import { getDb } from "@/lib/persistence/db";
 import {
   PgCalculationRunRepository,
@@ -28,19 +28,21 @@ import {
 export async function getProjectsAction() {
   try {
     const user = await getCurrentUser();
+    if (!user)
+      return {
+        success: false,
+        error: "Please sign in to view your projects.",
+        projects: [],
+      };
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
 
     const allProjects = await projectRepo.findAll();
 
     // Authorization filter
-    const visibleProjects = allProjects.filter((p) => {
-      if (!user) {
-        // Unauthenticated visitor sees only unowned/demo projects
-        return !p.ownerId;
-      }
-      return canAccessProject(user, p);
-    });
+    const visibleProjects = allProjects.filter((p) =>
+      canAccessProject(user, p),
+    );
 
     return { success: true, projects: visibleProjects };
   } catch (error) {
@@ -52,9 +54,17 @@ export async function getProjectsAction() {
 export async function getProjectAction(projectId: string) {
   try {
     const user = await getCurrentUser();
+    if (!user)
+      return {
+        success: false,
+        error: "Please sign in to view this project.",
+        data: null,
+      };
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
     const snapshotRepo = new PgInputSnapshotRepository(db);
+    const runRepo = new PgCalculationRunRepository(db);
+    const calculationSnapshotRepo = new PgCalculationSnapshotRepository(db);
 
     const project = await projectRepo.findById(projectId);
     if (!project) {
@@ -62,7 +72,7 @@ export async function getProjectAction(projectId: string) {
     }
 
     // Enforce tenant authorization
-    if (user && !canAccessProject(user, project)) {
+    if (!canAccessProject(user, project)) {
       return {
         success: false,
         error:
@@ -85,30 +95,49 @@ export async function getProjectAction(projectId: string) {
         },
       };
     } else {
-      wizardInput = createDefaultProjectWizardInput({
-        project: {
-          id: project.id,
-          name: project.name,
-          mode: project.mode as ProjectMode,
-          industryActivity: project.industryActivity,
-          stage: project.stage as ProjectStage,
-          status: project.status as ProjectStatus,
-          areaClassification: project.areaClassification as AreaClassification,
-          address: (
-            project.location as {
-              postalAddress?: ProjectWizardInput["project"]["address"];
-            }
-          )?.postalAddress,
-          projectionPeriodYears: project.projectionPeriodYears,
-        },
+      wizardInput = createEmptyProjectWizardInput({
+        id: project.id,
+        name: project.name,
+        mode: project.mode as ProjectMode,
+        industryActivity: project.industryActivity,
+        stage: project.stage as ProjectStage,
+        status: project.status as ProjectStatus,
+        areaClassification: project.areaClassification as AreaClassification,
+        address: (
+          project.location as {
+            postalAddress?: ProjectWizardInput["project"]["address"];
+          }
+        )?.postalAddress,
+        projectionPeriodYears: project.projectionPeriodYears,
       });
     }
+
+    const latestCompletedRun = (await runRepo.findByProjectId(projectId))
+      .filter(
+        (run) =>
+          run.status === "COMPLETED" &&
+          run.inputSnapshotId === project.currentInputSnapshotId,
+      )
+      .sort(
+        (left, right) => right.startedAt.getTime() - left.startedAt.getTime(),
+      )
+      .at(0);
+    const calculationSnapshot = latestCompletedRun
+      ? (
+          await calculationSnapshotRepo.findByCalculationRunId(
+            latestCompletedRun.id,
+          )
+        )[0]
+      : undefined;
 
     return {
       success: true,
       data: {
         project,
         wizardInput,
+        calculationResult:
+          (calculationSnapshot?.data as ProjectCalculationResult | undefined) ??
+          null,
       },
     };
   } catch (error) {
@@ -123,6 +152,12 @@ export async function createProjectAction(data: {
   industryActivity?: string;
   projectionPeriodYears?: number;
   areaClassification?: "RURAL" | "URBAN" | "UNCLASSIFIED";
+  enterpriseName?: string;
+  applicantName?: string;
+  applicantType?: ProjectWizardInput["applicant"]["applicantType"];
+  projectDescription?: string;
+  state?: string;
+  district?: string;
 }) {
   try {
     if (
@@ -145,23 +180,25 @@ export async function createProjectAction(data: {
     }
 
     const user = await getCurrentUser();
+    if (!user)
+      return { success: false, error: "Please sign in to create a project." };
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
     const snapshotRepo = new PgInputSnapshotRepository(db);
 
     const newProject = await projectRepo.create({
       name: data.name.trim(),
-      mode: data.mode || "SUBSIDY",
-      industryActivity: data.industryActivity || "Manufacturing / Processing",
+      mode: data.mode || "BANKABLE",
+      industryActivity: data.industryActivity?.trim() || "Not specified",
       stage: "PLANNING",
       status: "DRAFT",
-      areaClassification: data.areaClassification || "RURAL",
+      areaClassification: data.areaClassification || "UNCLASSIFIED",
       projectionPeriodYears: projectionPeriod,
-      ownerId: user?.id ?? null,
+      ownerId: user.id,
     });
 
-    const defaultInput = createDefaultProjectWizardInput({
-      project: {
+    const defaultInput = createEmptyProjectWizardInput(
+      {
         id: newProject.id,
         name: newProject.name,
         mode: newProject.mode as ProjectMode,
@@ -169,9 +206,24 @@ export async function createProjectAction(data: {
         stage: newProject.stage as ProjectStage,
         status: newProject.status as ProjectStatus,
         areaClassification: newProject.areaClassification as AreaClassification,
+        enterpriseName: data.enterpriseName?.trim() || data.name.trim(),
+        projectDescription: data.projectDescription?.trim() || "",
+        address:
+          data.state?.trim() || data.district?.trim()
+            ? {
+                lines: [],
+                district: data.district?.trim() || "",
+                state: data.state?.trim() || "",
+              }
+            : undefined,
         projectionPeriodYears: newProject.projectionPeriodYears,
       },
-    });
+      {
+        applicantName: data.applicantName?.trim(),
+        applicantType: data.applicantType,
+        projectDescription: data.projectDescription?.trim(),
+      },
+    );
 
     const snapshot = await snapshotRepo.create({
       projectId: newProject.id,
@@ -211,6 +263,8 @@ export async function saveProjectDraftAction(input: ProjectWizardInput) {
     }
 
     const user = await getCurrentUser();
+    if (!user)
+      return { success: false, error: "Please sign in to save this project." };
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
     const snapshotRepo = new PgInputSnapshotRepository(db);
@@ -221,7 +275,7 @@ export async function saveProjectDraftAction(input: ProjectWizardInput) {
     }
 
     // Authorization check
-    if (user && !canMutateProject(user, existing)) {
+    if (!canMutateProject(user, existing)) {
       return {
         success: false,
         error:
@@ -288,11 +342,13 @@ export async function runProjectCalculationAction(
 }> {
   try {
     const user = await getCurrentUser();
+    if (!user) throw new Error("Please sign in to calculate this project.");
     const db = getDb();
     const projectRepo = new PgProjectRepository(db);
 
     const existing = await projectRepo.findById(input.project.id);
-    if (existing && user && !canAccessProject(user, existing)) {
+    if (!existing) throw new Error("Project not found.");
+    if (!canMutateProject(user, existing)) {
       throw new Error(
         "Access denied. You do not have permission to calculate projections for this project.",
       );
@@ -311,7 +367,7 @@ export async function runProjectCalculationAction(
         projectId: input.project.id,
         inputSnapshotId,
         status: result.success ? "COMPLETED" : "FAILED",
-        triggeredBy: user?.email ?? "USER",
+        triggeredBy: user.email,
       });
 
       if (run) {
@@ -334,9 +390,16 @@ export async function runProjectCalculationAction(
           });
           fundingSnapshotId = fundingSnapshot.id;
         }
+        const blockingIssues = result.issues.filter(
+          (issue) => issue.severity === "ERROR",
+        );
         return {
-          success: true,
+          success: result.success,
           result,
+          error:
+            blockingIssues.length > 0
+              ? blockingIssues.map((issue) => issue.message).join(" ")
+              : undefined,
           inputSnapshotId,
           calculationRunId: run.id,
           calculationSnapshotId: calculationSnapshot.id,
@@ -345,14 +408,20 @@ export async function runProjectCalculationAction(
       }
     }
 
-    return { success: true, result };
+    return {
+      success: false,
+      result,
+      error:
+        "The saved project revision could not be identified. Save the draft and retry the calculation.",
+    };
   } catch (error) {
     console.error("Failed to execute calculation run:", error);
     const fallbackResult = orchestrateProjectCalculation(input);
     return {
-      success: true,
+      success: false,
       result: fallbackResult,
-      error: (error as Error).message,
+      error:
+        "The calculation could not be saved. Your draft remains available; please retry.",
     };
   }
 }
