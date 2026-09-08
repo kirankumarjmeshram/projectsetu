@@ -32,6 +32,7 @@ import {
 } from "@/lib/reports/contracts";
 import { renderDocx, renderExcel, renderPdf } from "@/lib/reports/renderers";
 import { getReportArtifactStorage } from "@/lib/reports/storage";
+import { selectLatestCurrentCalculationRun } from "@/lib/reports/source-selection";
 import { validateDprReport } from "@/lib/reports/validation";
 
 async function loadReportSources(
@@ -43,15 +44,13 @@ async function loadReportSources(
   const db = getDb();
   const project = await new PgProjectRepository(db).findById(projectId);
   if (!project) throw new Error("Project not found.");
-  const runs = (
-    await new PgCalculationRunRepository(db).findByProjectId(projectId)
-  )
-    .filter((run) => run.status === "COMPLETED")
-    .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
-  const run = runs[0];
+  const run = selectLatestCurrentCalculationRun(
+    await new PgCalculationRunRepository(db).findByProjectId(projectId),
+    project.currentInputSnapshotId,
+  );
   if (!run)
     throw new Error(
-      "A completed, persisted calculation run is required before report generation.",
+      "Recalculate the current saved project inputs before report generation.",
     );
   const inputSnapshot = await new PgInputSnapshotRepository(db).findById(
     run.inputSnapshotId,
@@ -163,7 +162,12 @@ export async function buildReportPreviewAction(projectId: string) {
     );
     return { success: true as const, model, validation };
   } catch (error) {
-    return { success: false as const, error: (error as Error).message };
+    logger.error("DPR report preview failed", error, { projectId });
+    return {
+      success: false as const,
+      error:
+        "The DPR preview could not be prepared. Save and recalculate the current project inputs, then retry.",
+    };
   }
 }
 
@@ -300,9 +304,10 @@ export async function listReportVersionsAction(projectId: string) {
       currentInputSnapshotId: project.currentInputSnapshotId,
     };
   } catch (error) {
+    logger.error("DPR report history lookup failed", error, { projectId });
     return {
       success: false as const,
-      error: (error as Error).message,
+      error: "Report history could not be loaded. Please retry.",
       reports: [],
     };
   }

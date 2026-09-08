@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 
-import { canAccessProject, canMutateProject } from "@/lib/auth/authorization";
+import {
+  belongsToProject,
+  canAccessProject,
+  canMutateProject,
+} from "@/lib/auth/authorization";
 import { getCurrentUser } from "@/lib/auth/session";
 import type { ProjectCostItemInput } from "@/lib/application/orchestrator/orchestrator-types";
 import { getDocumentStorage } from "@/lib/documents/storage";
@@ -62,7 +66,15 @@ export async function createManualQuotationAction(input: {
     const reviewRepo = new PgQuotationReviewRepository(db);
 
     let docId = input.documentId;
-    if (!docId) {
+    if (docId) {
+      const document = await docRepo.findById(docId);
+      if (!document || !belongsToProject(document, input.projectId)) {
+        return {
+          success: false,
+          error: "Quotation document not found for this project.",
+        };
+      }
+    } else {
       const doc = await docRepo.create({
         projectId: input.projectId,
         kind: "QUOTATION",
@@ -215,6 +227,23 @@ export async function saveQuotationReviewAction(
     }
 
     const reviewRepo = new PgQuotationReviewRepository(db);
+    const extractionRepo = new PgQuotationExtractionRepository(db);
+    const extraction = await extractionRepo.findById(extractionId);
+    if (!extraction || !belongsToProject(extraction, projectId)) {
+      return {
+        success: false,
+        error: "Quotation extraction not found for this project.",
+      };
+    }
+    if (
+      !belongsToProject(reviewedData, projectId) ||
+      reviewedData.documentId !== extraction.documentId
+    ) {
+      return {
+        success: false,
+        error: "Quotation review association is invalid.",
+      };
+    }
 
     const review = await reviewRepo.create({
       projectId,
@@ -255,6 +284,21 @@ export async function approveQuotationAction(
     const reviewRepo = new PgQuotationReviewRepository(db);
     const extractionRepo = new PgQuotationExtractionRepository(db);
     const docRepo = new PgDocumentMetadataRepository(db);
+    const extraction = await extractionRepo.findById(extractionId);
+    const document = await docRepo.findById(approvedData.documentId);
+    if (
+      !extraction ||
+      !document ||
+      !belongsToProject(extraction, projectId) ||
+      !belongsToProject(document, projectId) ||
+      !belongsToProject(approvedData, projectId) ||
+      extraction.documentId !== document.id
+    ) {
+      return {
+        success: false,
+        error: "Quotation approval association is invalid.",
+      };
+    }
 
     const review = await reviewRepo.create({
       projectId,
@@ -297,12 +341,38 @@ export async function mapQuotationLinesAction(
     }
 
     const mappingRepo = new PgQuotationLineMappingRepository(db);
+    const approvedReview = (
+      await new PgQuotationReviewRepository(db).findByProjectId(
+        quotation.projectId,
+      )
+    ).find(
+      (review) =>
+        review.status === "APPROVED" &&
+        (review.reviewedData as NormalizedQuotation).documentId ===
+          quotation.documentId,
+    );
+    if (!approvedReview) {
+      return {
+        success: false,
+        error: "An approved quotation review is required before mapping.",
+        costItems: existingCostItems,
+      };
+    }
+    const approvedQuotation =
+      approvedReview.reviewedData as NormalizedQuotation;
+    if (!belongsToProject(approvedQuotation, quotation.projectId)) {
+      return {
+        success: false,
+        error: "Approved quotation association is invalid.",
+        costItems: existingCostItems,
+      };
+    }
     const existingMappings = await mappingRepo.findByProjectId(
       quotation.projectId,
     );
 
     const result = mapQuotationLinesToProjectCost(
-      quotation,
+      approvedQuotation,
       instructions,
       existingCostItems,
       existingMappings as unknown as readonly QuotationLineMapping[],
@@ -382,20 +452,15 @@ export async function getQuotationDetailsAction(documentId: string) {
     const docRepo = new PgDocumentMetadataRepository(db);
     const doc = await docRepo.findById(documentId);
 
-    if (doc) {
-      const projectRepo = new PgProjectRepository(db);
-      const existingProject = await projectRepo.findById(doc.projectId);
-      if (
-        !existingProject ||
-        !user ||
-        !canAccessProject(user, existingProject)
-      ) {
-        return {
-          success: false,
-          error:
-            "Access denied. You do not have permission to view this quotation.",
-        };
-      }
+    if (!doc) return { success: false, error: "Quotation document not found." };
+    const projectRepo = new PgProjectRepository(db);
+    const existingProject = await projectRepo.findById(doc.projectId);
+    if (!existingProject || !user || !canAccessProject(user, existingProject)) {
+      return {
+        success: false,
+        error:
+          "Access denied. You do not have permission to view this quotation.",
+      };
     }
 
     const extractionRepo = new PgQuotationExtractionRepository(db);
@@ -448,6 +513,10 @@ export async function compareQuotationsAction(
     const quotations: NormalizedQuotation[] = [];
 
     for (const docId of documentIds) {
+      const document = await new PgDocumentMetadataRepository(db).findById(
+        docId,
+      );
+      if (!document || !belongsToProject(document, projectId)) continue;
       const extractions = await extractionRepo.findByDocumentId(docId);
       const ext = extractions[0];
       if (!ext) continue;

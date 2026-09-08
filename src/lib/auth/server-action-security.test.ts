@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { canAccessProject, canMutateProject } from "./authorization";
+import {
+  belongsToProject,
+  canAccessProject,
+  canMutateProject,
+} from "./authorization";
 import type { AuthUser } from "./contracts";
 import type { PersistedProject } from "../persistence/repositories";
 
@@ -79,5 +83,14 @@ describe("Security & IDOR Isolation Test Suite", () => {
     expect(canAccessProject(victimUser, unownedProject)).toBe(false);
     expect(canMutateProject(victimUser, unownedProject)).toBe(false);
     expect(canAccessProject(adminUser, unownedProject)).toBe(true);
+  });
+
+  it("rejects a browser-supplied resource associated with another project", () => {
+    expect(
+      belongsToProject({ projectId: victimProject.id }, victimProject.id),
+    ).toBe(true);
+    expect(
+      belongsToProject({ projectId: "proj-attacker" }, victimProject.id),
+    ).toBe(false);
   });
 });

@@ -60,6 +60,14 @@ export function canMutateProject(
   return Boolean(project.ownerId) && project.ownerId === user.id;
 }
 
+/** Prevents browser-supplied resource IDs from being cross-linked to a project. */
+export function belongsToProject(
+  resource: { readonly projectId: string },
+  projectId: string,
+): boolean {
+  return resource.projectId === projectId;
+}
+
 /**
  * Enforces that the current request has an active authenticated session.
  * Throws UnauthorizedError if unauthenticated.
