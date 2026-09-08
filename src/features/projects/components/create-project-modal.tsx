@@ -18,14 +18,17 @@ export function CreateProjectModal({
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [mode, setMode] = useState<"SUBSIDY" | "BANKABLE" | "SELF_FUNDED">(
-    "SUBSIDY",
+    "BANKABLE",
   );
-  const [industryActivity, setIndustryActivity] = useState(
-    "Manufacturing / Food Processing",
-  );
+  const [industryActivity, setIndustryActivity] = useState("");
+  const [enterpriseName, setEnterpriseName] = useState("");
+  const [applicantName, setApplicantName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  const [state, setState] = useState("");
+  const [district, setDistrict] = useState("");
   const [areaClassification, setAreaClassification] = useState<
     "RURAL" | "URBAN" | "UNCLASSIFIED"
-  >("RURAL");
+  >("UNCLASSIFIED");
   const [projectionPeriodYears, setProjectionPeriodYears] = useState(5);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +47,11 @@ export function CreateProjectModal({
         name: name.trim(),
         mode,
         industryActivity,
+        enterpriseName,
+        applicantName,
+        projectDescription,
+        state,
+        district,
         areaClassification,
         projectionPeriodYears,
       });
@@ -66,7 +74,8 @@ export function CreateProjectModal({
               Create New Project
             </h3>
             <p className="mt-0.5 text-xs text-slate-500">
-              Set up initial project parameters and launch the 10-step wizard.
+              Start with known facts only. Financial assumptions are added in
+              the project workspace and are never pre-filled with sample values.
             </p>
           </div>
           <button
@@ -97,6 +106,33 @@ export function CreateProjectModal({
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Mahalakshmi Agro Food Processing Unit"
             />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700">
+                Business / Enterprise Name
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                value={enterpriseName}
+                onChange={(e) => setEnterpriseName(e.target.value)}
+                placeholder="Registered or proposed enterprise name"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700">
+                Promoter / Applicant Name
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+                value={applicantName}
+                onChange={(e) => setApplicantName(e.target.value)}
+                placeholder="May be completed later"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -132,9 +168,9 @@ export function CreateProjectModal({
                   )
                 }
               >
-                <option value="RURAL">Rural (Higher Subsidy)</option>
+                <option value="RURAL">Rural (subject to verification)</option>
                 <option value="URBAN">Urban</option>
-                <option value="UNCLASSIFIED">Semi-Urban</option>
+                <option value="UNCLASSIFIED">Not classified yet</option>
               </select>
             </div>
           </div>
@@ -149,6 +185,7 @@ export function CreateProjectModal({
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-hidden"
                 value={industryActivity}
                 onChange={(e) => setIndustryActivity(e.target.value)}
+                placeholder="e.g. repair services, food processing"
               />
             </div>
 
@@ -169,6 +206,44 @@ export function CreateProjectModal({
             </div>
           </div>
 
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700">
+                State
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-hidden"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-700">
+                District
+              </label>
+              <input
+                type="text"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs focus:outline-hidden"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-slate-700">
+              Brief Project Description
+            </label>
+            <textarea
+              rows={3}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+              value={projectDescription}
+              onChange={(e) => setProjectDescription(e.target.value)}
+              placeholder="What will the proposed project produce or provide?"
+            />
+          </div>
+
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"
@@ -183,7 +258,7 @@ export function CreateProjectModal({
               disabled={isPending}
               className="rounded-lg bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-xs transition-colors hover:bg-emerald-800 disabled:opacity-50"
             >
-              {isPending ? "Creating..." : "Create & Open Wizard →"}
+              {isPending ? "Creating..." : "Create Project →"}
             </button>
           </div>
         </form>

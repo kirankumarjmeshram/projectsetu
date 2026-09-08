@@ -49,7 +49,7 @@ export async function createManualQuotationAction(input: {
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(input.projectId);
 
-    if (existingProject && user && !canMutateProject(user, existingProject)) {
+    if (!existingProject || !user || !canMutateProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -136,7 +136,7 @@ export async function extractQuotationAction(documentId: string) {
     }
 
     const existingProject = await projectRepo.findById(doc.projectId);
-    if (existingProject && user && !canMutateProject(user, existingProject)) {
+    if (!existingProject || !user || !canMutateProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -206,7 +206,7 @@ export async function saveQuotationReviewAction(
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(projectId);
 
-    if (existingProject && user && !canMutateProject(user, existingProject)) {
+    if (!existingProject || !user || !canMutateProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -244,7 +244,7 @@ export async function approveQuotationAction(
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(projectId);
 
-    if (existingProject && user && !canMutateProject(user, existingProject)) {
+    if (!existingProject || !user || !canMutateProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -287,7 +287,7 @@ export async function mapQuotationLinesAction(
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(quotation.projectId);
 
-    if (existingProject && user && !canMutateProject(user, existingProject)) {
+    if (!existingProject || !user || !canMutateProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -354,7 +354,7 @@ export async function getQuotationMappingsAction(projectId: string) {
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(projectId);
 
-    if (existingProject && user && !canAccessProject(user, existingProject)) {
+    if (!existingProject || !user || !canAccessProject(user, existingProject)) {
       return {
         success: false,
         error:
@@ -385,7 +385,11 @@ export async function getQuotationDetailsAction(documentId: string) {
     if (doc) {
       const projectRepo = new PgProjectRepository(db);
       const existingProject = await projectRepo.findById(doc.projectId);
-      if (existingProject && user && !canAccessProject(user, existingProject)) {
+      if (
+        !existingProject ||
+        !user ||
+        !canAccessProject(user, existingProject)
+      ) {
         return {
           success: false,
           error:
@@ -430,7 +434,7 @@ export async function compareQuotationsAction(
     const projectRepo = new PgProjectRepository(db);
     const existingProject = await projectRepo.findById(projectId);
 
-    if (existingProject && user && !canAccessProject(user, existingProject)) {
+    if (!existingProject || !user || !canAccessProject(user, existingProject)) {
       return {
         success: false,
         error:

@@ -54,9 +54,9 @@ export function Step10Results({
             No Calculation Run Yet
           </h3>
           <p className="mx-auto max-w-md text-xs text-slate-500">
-            Execute the financial calculation engines to generate multi-year
-            projected financial statements, bankability ratios, DCF returns, and
-            scheme evaluations.
+            Complete the project assumptions, then calculate to generate
+            projected statements, bankability ratios, returns, and scheme
+            assessments.
           </p>
           <button
             type="button"
@@ -66,7 +66,7 @@ export function Step10Results({
           >
             {isCalculating
               ? "Calculating..."
-              : "⚡ Execute Financial Engines Now"}
+              : "Calculate Financial Projections"}
           </button>
         </div>
       </div>
@@ -103,8 +103,8 @@ export function Step10Results({
             Step 10: Financial Statements & Feasibility Results
           </h3>
           <p className="mt-0.5 text-xs text-slate-500">
-            Authoritative financial statements and bank appraisal metrics ready
-            for Task 020 DPR generation.
+            Review the project summary, material warnings, projected statements,
+            bankability metrics, and report versions.
           </p>
         </div>
 

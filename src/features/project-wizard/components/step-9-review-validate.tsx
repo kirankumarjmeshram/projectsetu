@@ -51,7 +51,7 @@ export function Step9ReviewValidate({
         </h3>
         <p className="mt-1 text-xs text-slate-500">
           Review all configured project assumptions, configure tax and discount
-          rates, and execute the authoritative financial calculation engine.
+          rates, and calculate the projected financial statements.
         </p>
       </div>
 
@@ -172,7 +172,7 @@ export function Step9ReviewValidate({
       {calculationResult && (
         <div className="space-y-2">
           <h4 className="text-xs font-bold tracking-wider text-slate-700 uppercase">
-            Calculation Engine Audit & Validation Checks
+            Calculation Warnings & Validation Checks
           </h4>
           <IssuesView issues={calculationResult.issues} />
         </div>
@@ -182,11 +182,11 @@ export function Step9ReviewValidate({
       <div className="flex flex-col justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 sm:flex-row sm:items-center">
         <div>
           <h4 className="text-sm font-bold text-emerald-950">
-            Execute Authoritative Projections
+            Calculate Financial Projections
           </h4>
           <p className="mt-0.5 text-xs text-emerald-800">
-            Run all 12 domain financial and scheme engines to produce
-            statements, metrics, and DPR readiness.
+            Validate the saved assumptions and produce statements, ratios, and
+            DPR readiness results.
           </p>
         </div>
 
@@ -196,9 +196,7 @@ export function Step9ReviewValidate({
           disabled={isCalculating}
           className="shrink-0 rounded-xl bg-emerald-700 px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-emerald-800 disabled:opacity-50"
         >
-          {isCalculating
-            ? "Calculating Engines..."
-            : "⚡ Execute Financial Engines"}
+          {isCalculating ? "Calculating..." : "Calculate & Review Results"}
         </button>
       </div>
     </div>

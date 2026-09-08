@@ -7,16 +7,16 @@ export interface WizardStepMeta {
 }
 
 export const WIZARD_STEPS: readonly WizardStepMeta[] = [
-  { number: 1, title: "Project Identity", shortTitle: "Identity" },
+  { number: 1, title: "Project Overview", shortTitle: "Overview" },
   { number: 2, title: "Promoter Profile", shortTitle: "Promoter" },
   { number: 3, title: "Project Cost", shortTitle: "Cost" },
   { number: 4, title: "Means of Finance", shortTitle: "Financing" },
-  { number: 5, title: "Operations & Revenue", shortTitle: "Operations" },
+  { number: 5, title: "Sales & Operating Costs", shortTitle: "Sales & Costs" },
   { number: 6, title: "Working Capital", shortTitle: "Working Cap" },
   { number: 7, title: "Loan Assumptions", shortTitle: "Loan" },
   { number: 8, title: "Government Schemes", shortTitle: "Schemes" },
-  { number: 9, title: "Review & Audit", shortTitle: "Review" },
-  { number: 10, title: "Financial Statements", shortTitle: "Statements" },
+  { number: 9, title: "Review & Calculate", shortTitle: "Review" },
+  { number: 10, title: "Results & DPR", shortTitle: "Results & DPR" },
 ];
 
 interface WizardStepNavProps {

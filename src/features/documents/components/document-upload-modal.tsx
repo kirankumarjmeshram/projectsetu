@@ -129,7 +129,7 @@ export function DocumentUploadModal({
             <input
               type="text"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
-              placeholder="e.g. Acme Feed Mill Equipment Quotation"
+              placeholder="e.g. Equipment supplier quotation"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />

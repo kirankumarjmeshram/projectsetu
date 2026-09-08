@@ -47,8 +47,8 @@ export function Step4Financing({
     const newSource: FinanceSourceInput = {
       id: generateId(),
       type: "PROMOTER_CONTRIBUTION",
-      name: "Own Equity Contribution",
-      amount: "100000.00",
+      name: "",
+      amount: "0",
     };
     onChange([...sources, newSource]);
   };
@@ -174,6 +174,18 @@ export function Step4Financing({
                 </td>
               </tr>
             ))}
+            {sources.length === 0 && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-4 py-8 text-center text-slate-500"
+                >
+                  No financing source added yet. Add promoter contribution, term
+                  loan, or another confirmed source to reconcile the project
+                  cost.
+                </td>
+              </tr>
+            )}
             <tr className="border-t-2 border-slate-300 bg-slate-100/80 font-bold text-slate-900">
               <td colSpan={2} className="px-4 py-3 text-sm">
                 Total Means of Finance

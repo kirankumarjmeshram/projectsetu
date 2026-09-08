@@ -73,4 +73,11 @@ describe("Security & IDOR Isolation Test Suite", () => {
     expect(canAccessProject(adminUser, victimProject)).toBe(true);
     expect(canMutateProject(adminUser, victimProject)).toBe(true);
   });
+
+  it("does not expose an unowned transitional project to a regular user", () => {
+    const unownedProject = { ...victimProject, ownerId: null };
+    expect(canAccessProject(victimUser, unownedProject)).toBe(false);
+    expect(canMutateProject(victimUser, unownedProject)).toBe(false);
+    expect(canAccessProject(adminUser, unownedProject)).toBe(true);
+  });
 });

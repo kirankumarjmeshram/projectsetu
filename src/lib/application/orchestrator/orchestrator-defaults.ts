@@ -272,5 +272,72 @@ export function createDefaultProjectWizardInput(
       : defaultTax,
     selectedPrograms: overrides?.selectedPrograms ?? [],
     schemeFacts: overrides?.schemeFacts ?? {},
+    dprDetails: overrides?.dprDetails ?? {},
+  };
+}
+
+/**
+ * Creates an honest production draft. Financially meaningful assumptions are
+ * intentionally absent or zero until the user supplies them. The populated
+ * default factory above remains available only for deterministic tests and
+ * explicitly selected examples.
+ */
+export function createEmptyProjectWizardInput(
+  project: ProjectDetailsInput,
+  initial?: {
+    applicantName?: string;
+    applicantType?: ApplicantPromoterInput["applicantType"];
+    projectDescription?: string;
+  },
+): ProjectWizardInput {
+  return {
+    project: {
+      ...project,
+      projectDescription: initial?.projectDescription ?? "",
+    },
+    applicant: {
+      applicantType: initial?.applicantType ?? "INDIVIDUAL",
+      name: initial?.applicantName ?? "",
+      gender: "OTHER",
+      socialCategory: "GENERAL",
+      educationQualification: "",
+      enterpriseStatus: "NEW",
+      specialCategoryFlags: [],
+    },
+    costItems: [],
+    financingSources: [],
+    revenueProducts: [],
+    operatingExpenses: [],
+    workingCapital: {
+      dayBase: "365",
+      rawMaterialDays: "0",
+      finishedGoodsDays: "0",
+      receivableDays: "0",
+      creditorDays: "0",
+      borrowerMarginPercentage: "0",
+      notes: "",
+    },
+    loan: {
+      id: generateId(),
+      loanType: "TERM_LOAN",
+      principalAmount: "0",
+      annualInterestRate: "0",
+      repaymentFrequency: "MONTHLY",
+      repaymentMethod: "EQUAL_PRINCIPAL",
+      repaymentTenureYears: 1,
+      moratoriumPeriods: 0,
+      moratoriumType: "PRINCIPAL_ONLY",
+      moratoriumInterestTreatment: "PAY_CURRENT",
+      notes: "",
+    },
+    taxAndReturns: {
+      taxMode: "NO_TAX",
+      taxRate: "0",
+      discountRate: "0",
+      initialOpeningCash: "0",
+    },
+    selectedPrograms: [],
+    schemeFacts: {},
+    dprDetails: {},
   };
 }

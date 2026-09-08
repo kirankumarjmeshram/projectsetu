@@ -144,6 +144,52 @@ export function orchestrateProjectCalculation(
   const asOfDate: ISODate =
     evaluationDate ?? (new Date().toISOString().split("T")[0] as ISODate);
 
+  if (
+    !input.project.industryActivity.trim() ||
+    input.project.industryActivity === "Not specified"
+  )
+    issues.push({
+      code: "PROJECT_ACTIVITY_MISSING",
+      message: "Add the proposed business activity before finalizing the DPR.",
+      severity: "WARNING",
+      section: "Project Overview",
+      path: "project.industryActivity",
+    });
+  if (!input.applicant.name.trim())
+    issues.push({
+      code: "PROMOTER_NAME_MISSING",
+      message:
+        "Add the lead promoter or applicant name before finalizing the DPR.",
+      severity: "WARNING",
+      section: "Promoter",
+      path: "applicant.name",
+    });
+  if (input.costItems.length === 0)
+    issues.push({
+      code: "PROJECT_COST_EMPTY",
+      message: "Add at least one actual project-cost item before calculation.",
+      severity: "ERROR",
+      section: "Project Cost",
+      path: "costItems",
+    });
+  if (input.revenueProducts.length === 0)
+    issues.push({
+      code: "REVENUE_ASSUMPTIONS_EMPTY",
+      message: "Add at least one product or service sales assumption.",
+      severity: "ERROR",
+      section: "Sales & Revenue",
+      path: "revenueProducts",
+    });
+  if (input.operatingExpenses.length === 0)
+    issues.push({
+      code: "OPERATING_EXPENSES_EMPTY",
+      message:
+        "No operating expense assumptions were supplied. Confirm this explicitly before relying on profitability results.",
+      severity: "WARNING",
+      section: "Operating Expenses",
+      path: "operatingExpenses",
+    });
+
   // ─── 1. Project Cost ────────────────────────────────────────────────────────
   const projectCostDomain: ProjectCost = {
     projectId,
@@ -246,6 +292,24 @@ export function orchestrateProjectCalculation(
       section: "Financing",
     });
   }
+
+  const termLoanFunding = input.financingSources
+    .filter((source) => source.type === "TERM_LOAN")
+    .reduce(
+      (total, source) => total.plus(toDecimal(toMonetary(source.amount))),
+      toDecimal(monetaryAmount("0")),
+    );
+  if (
+    !termLoanFunding.equals(toDecimal(toMonetary(input.loan.principalAmount)))
+  )
+    issues.push({
+      code: "LOAN_PRINCIPAL_FINANCE_MISMATCH",
+      message:
+        "Loan principal does not match the term-loan amount in Means of Finance.",
+      severity: "WARNING",
+      section: "Loan",
+      path: "loan.principalAmount",
+    });
 
   // ─── 3. Revenue & Operating Expenses Projection ────────────────────────────
   const revenueAssumptions: RevenueProjectionAssumption[] =

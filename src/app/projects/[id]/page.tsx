@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import {
   getProjectAction,
@@ -9,6 +9,7 @@ import {
 } from "@/app/actions/project-actions";
 import { UserMenu } from "@/features/auth/components/user-menu";
 import { WizardContainer } from "@/features/project-wizard/components/wizard-container";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,8 @@ interface ProjectPageProps {
 }
 
 export default async function ProjectWizardPage({ params }: ProjectPageProps) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   const { id } = await params;
   const result = await getProjectAction(id);
 
@@ -24,7 +27,7 @@ export default async function ProjectWizardPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  const { wizardInput } = result.data;
+  const { wizardInput, calculationResult } = result.data;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -69,6 +72,7 @@ export default async function ProjectWizardPage({ params }: ProjectPageProps) {
         <WizardContainer
           projectId={id}
           initialInput={wizardInput}
+          initialCalculationResult={calculationResult}
           onSaveDraft={saveProjectDraftAction}
           onRunCalculation={runProjectCalculationAction}
         />

@@ -1,63 +1,80 @@
 # ProjectSetu
 
-ProjectSetu is a deterministic financial calculation platform, MSME Detailed Project Report (DPR) generator, and Indian government scheme intelligence system. It features bankable multi-year cash flows, versioned government scheme modeling (PMEGP, NLM, PMFME, MUDRA, CMEGP), multi-program funding composition, document & quotation ingestion, PDF/DOCX/Excel artifact export, multi-tenant isolation, admin operations console, and production-grade PostgreSQL persistence.
+ProjectSetu is a workspace for preparing deterministic financial projections and Detailed Project Reports (DPRs) for Indian MSME proposals. It combines structured project inputs, Decimal.js-based financial calculations, scheme screening, supporting documents and quotations, versioned reports, and PDF/DOCX/XLSX exports.
+
+ProjectSetu supports professional preparation and review; it does not guarantee loan approval, subsidy eligibility, statutory compliance, or acceptance by a bank or government authority. Users and reviewers must verify source documents, current scheme rules, licences, quotations, and assumptions.
+
+## Typical workflow
+
+1. Create an account and sign in.
+2. Create a project with its real promoter, location, activity, and purpose.
+3. Enter project cost and means of finance. New projects contain no sample financial data.
+4. Enter sales capacity, utilisation, pricing, growth, operating costs, working capital, loan terms, and other assumptions.
+5. Add supporting documents and supplier quotations; approve and map quotation amounts deliberately.
+6. Review validation issues and calculate the projections.
+7. Review financial statements, ratios, viability indicators, and scheme-screening results.
+8. Generate a versioned DPR and download PDF, DOCX, or XLSX artifacts. Generate a new version after changing project inputs.
+
+Unknown facts should remain blank until they are known. Scheme questionnaire answers are not preselected, and generated narrative does not invent market, promoter, process, or compliance facts.
+
+## Capabilities
+
+ProjectSetu composes canonical project-cost, funding, revenue, operating-expense, depreciation, loan, profit-and-loss, cash-flow, balance-sheet, ratio, DSCR, IRR and NPV engines into a single reviewable projection. Scheme screening currently covers versioned definitions for PMEGP, NLM, PMFME, MUDRA and CMEGP; results are informational and remain subject to current official rules and authority review.
+
+Supplier quotations are supporting evidence, not automatic project-cost entries. An amount affects calculations only after a user approves and deliberately maps it, preventing the same purchase from being recognized twice.
 
 ## Architecture and stack
 
-- **Frontend & App Framework**: Next.js 16 (App Router), React 19, Tailwind CSS
-- **Domain Modeling**: 100% pure deterministic TypeScript domain layer with Decimal.js precision
-- **Persistence & Database**: PostgreSQL 14+ with Drizzle ORM (schema migrations, connection pooling, SSL)
-- **Authentication & Security**: Scrypt password hashing, session token SHA-256 hashing, HTTP-only secure cookies, sliding-window rate limiting, and server-side RBAC
-- **Testing & Quality**: Vitest unit suite, PostgreSQL integration suite, Playwright browser E2E suite, ESLint, and Prettier
+- Next.js 16 App Router and React 19
+- Pure TypeScript financial and scheme domain modules using Decimal.js
+- PostgreSQL 14+ and Drizzle ORM
+- Scrypt password hashing, hashed session tokens, HTTP-only cookies, server-side authorization, and role-based admin access
+- Vitest unit/integration suites and Playwright browser tests
+- PDF, DOCX, and XLSX report exporters
 
-## Local development
+## Local setup
 
-Requires Node.js 20.9+ and npm.
+Requirements: Node.js 20.9 or later, npm, and PostgreSQL 14 or later.
 
 ```bash
-# 1. Install dependencies
 npm install
-
-# 2. Configure environment
 cp .env.example .env.local
-
-# 3. Start local PostgreSQL & run migrations
 npm run db:migrate
-
-# 4. Start development server
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+On Windows PowerShell, copy the environment file with:
 
-## Verification & Test Suites
-
-```bash
-npm run format:check  # Prettier style validation
-npm run typecheck     # TypeScript strict compilation
-npm run lint          # ESLint rules check
-npm test              # Vitest domain & unit tests
-npm run test:db       # PostgreSQL persistence integration tests
-npm run test:e2e      # Playwright browser end-to-end tests
-npm run build         # Next.js production build
+```powershell
+Copy-Item .env.example .env.local
 ```
 
-## Production Deployment & Operations
+Configure `DATABASE_URL` and the required authentication/session settings described in [the environment variable catalog](docs/deployment/environment-variables.md). The application does not create a PostgreSQL server; the configured server must already be running. Open `http://localhost:3000`, select **Create Account**, and enter your own project information.
 
-ProjectSetu is ready for containerized or bare-metal production deployment with isolated health probes:
+Development demo users are disabled by default. They are created only when the explicit development seed setting is enabled; never enable it in a shared or production environment.
 
-- **Liveness Probe**: `GET /api/health`
-- **Readiness Probe**: `GET /api/ready`
-- **Database Migration**: `npm run db:migrate`
-- **Database Migration Status**: `npm run db:migrate:status`
-- **Docker Multi-Stage Build**: `docker build -t projectsetu .`
+## Verification
 
-For detailed production guidance:
+```bash
+npm run format:check
+npm run typecheck
+npm run lint
+npm test
+npm run test:db
+npm run test:e2e
+npm run build
+```
 
-- [Production Deployment Guide](docs/deployment/README.md)
-- [Environment Variables Catalog](docs/deployment/environment-variables.md)
-- [CI/CD Pipeline Architecture](docs/deployment/ci-cd.md)
-- [Operations & Incident Runbook](docs/operations/production-runbook.md)
-- [Security Guidelines](docs/security/security-guidelines.md)
+`npm run test:db` and the readiness/E2E checks require an accessible migrated test database. The repository test helper uses PostgreSQL on `127.0.0.1:5433` when started explicitly.
 
-> **Security Guarantee**: Never commit real credentials, tokens, session secrets, private keys, or customer documents to version control.
+## Production and operations
+
+- Liveness: `GET /api/health`
+- Readiness, including database connectivity: `GET /api/ready`
+- Apply migrations: `npm run db:migrate`
+- Inspect migration status: `npm run db:migrate:status`
+- Container build: `docker build -t projectsetu .`
+
+See the [deployment guide](docs/deployment/README.md), [CI/CD guide](docs/deployment/ci-cd.md), [operations runbook](docs/operations/production-runbook.md), and [security guidelines](docs/security/security-guidelines.md).
+
+Never commit real credentials, tokens, session secrets, private keys, or customer documents.

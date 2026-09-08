@@ -1,138 +1,207 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("ProjectSetu Full Production & Auth Lifecycle E2E Suite", () => {
-  test("Healthcheck & Readiness Endpoints respond with healthy status and database connectivity", async ({
+test.describe("ProjectSetu practical project lifecycle", () => {
+  test("health and readiness report application and database status", async ({
     request,
   }) => {
-    // 1. Test Liveness probe (/api/health)
     const healthResponse = await request.get("/api/health");
     expect(healthResponse.status()).toBe(200);
-    const healthData = await healthResponse.json();
-    expect(healthData.status).toBe("healthy");
-    expect(healthData.version).toBe("0.1.0");
-    expect(typeof healthData.uptimeSeconds).toBe("number");
+    await expect(healthResponse.json()).resolves.toMatchObject({
+      status: "healthy",
+      version: "0.1.0",
+    });
 
-    // 2. Test Readiness probe (/api/ready)
     const readyResponse = await request.get("/api/ready");
     expect(readyResponse.status()).toBe(200);
-    const readyData = await readyResponse.json();
-    expect(readyData.status).toBe("ready");
-    expect(readyData.database).toBe("connected");
-    expect(typeof readyData.latencyMs).toBe("number");
+    await expect(readyResponse.json()).resolves.toMatchObject({
+      status: "ready",
+      database: "connected",
+    });
   });
 
-  test("Home page loads with branding, portfolio view, and Sign In trigger", async ({
+  test("unauthenticated product and admin routes redirect to sign in", async ({
     page,
   }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/ProjectSetu/i);
-
-    const brandHeading = page.locator("text=ProjectSetu");
-    await expect(brandHeading.first()).toBeVisible();
-
-    const signInBtn = page.getByRole("button", { name: /Sign In/i });
-    await expect(signInBtn.first()).toBeVisible();
-  });
-
-  test("Dedicated Login page provides fast demo sign-in", async ({ page }) => {
-    await page.goto("/login");
-
+    await expect(page).toHaveURL(/\/login$/);
     await expect(
-      page.getByRole("heading", { name: /Sign In to ProjectSetu/i }),
+      page.getByRole("heading", { name: "Sign In to ProjectSetu" }),
     ).toBeVisible();
 
-    const demoEntrepreneurBtn = page.getByRole("button", {
-      name: /👤 Entrepreneur/i,
-    });
-    const demoAdminBtn = page.getByRole("button", {
-      name: /🛡️ Admin User/i,
-    });
-
-    await expect(demoEntrepreneurBtn).toBeVisible();
-    await expect(demoAdminBtn).toBeVisible();
-  });
-
-  test("Admin Console requires ADMIN role", async ({ page }) => {
     await page.goto("/admin");
-    await expect(page).toHaveURL(/.*login.*/);
+    await expect(page).toHaveURL(/\/login$/);
   });
 
-  test("Entrepreneur Flow: Sign In and Portfolio Navigation", async ({
+  test("a new user completes, reports, downloads, and reopens a practical project", async ({
     page,
   }) => {
+    test.setTimeout(120_000);
+    const uniqueEmail = `project-owner-${Date.now()}@example.test`;
+    const projectName = `Mahalakshmi Foods ${Date.now()}`;
+
     await page.goto("/login");
+    await page.getByRole("button", { name: "Create Account" }).click();
+    await page.locator('input[type="text"]').fill("Anita Deshmukh");
+    await page.locator('input[type="email"]').fill(uniqueEmail);
+    await page.locator('input[type="password"]').fill("ProjectSetu!2026");
+    await page.getByRole("button", { name: /Create Account →/ }).click();
 
-    // Click demo Entrepreneur login
-    const demoEntrepreneurBtn = page.getByRole("button", {
-      name: /👤 Entrepreneur/i,
-    });
-    await demoEntrepreneurBtn.click();
+    await expect(page).toHaveURL("/");
+    await expect(
+      page.getByRole("heading", { name: "Project Workspace & DPR Portfolio" }),
+    ).toBeVisible();
 
-    // Should redirect to home page and show user menu
-    await page.waitForURL("/", { timeout: 10000 });
-    await expect(page.locator("text=Demo Entrepreneur").first()).toBeVisible();
-    await expect(page.locator("text=Entrepreneur").first()).toBeVisible();
-  });
+    await page
+      .getByRole("button", { name: "+ Create First Project", exact: true })
+      .click();
+    const fieldFor = (label: string) =>
+      page
+        .getByText(label, { exact: true })
+        .locator("..")
+        .locator("input, textarea");
+    await fieldFor("Project / Enterprise Name *").fill(projectName);
+    await fieldFor("Business / Enterprise Name").fill("Mahalakshmi Foods");
+    await fieldFor("Promoter / Applicant Name").fill("Anita Deshmukh");
+    await fieldFor("Sector Activity").fill("Millet food processing");
+    await fieldFor("State").fill("Maharashtra");
+    await fieldFor("District").fill("Nashik");
+    await fieldFor("Brief Project Description").fill(
+      "A proposed unit producing packaged millet snacks for regional retailers.",
+    );
+    await page.getByRole("button", { name: /Create Project/ }).click();
 
-  test("Admin Flow: Sign In, Console Access, and Multi-tab Inspection", async ({
-    page,
-  }) => {
-    await page.goto("/login");
-
-    // Click demo Admin login
-    const demoAdminBtn = page.getByRole("button", {
-      name: /🛡️ Admin User/i,
-    });
-    await demoAdminBtn.click();
-
-    // Redirect to home and verify Admin badge
-    await page.waitForURL("/", { timeout: 10000 });
-    await expect(page.locator("text=ProjectSetu Admin").first()).toBeVisible();
-
-    // Navigate to Admin Console
-    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/projects\/[a-zA-Z0-9-]+$/);
     await expect(
       page.getByRole("heading", {
-        name: /Executive Operations & Tenant Portfolio Overview/i,
+        name: "Step 1: Project Identity & Location",
+      }),
+    ).toBeVisible();
+    await expect(page.locator('input[type="text"]').first()).toHaveValue(
+      projectName,
+    );
+
+    for (let step = 1; step < 5; step += 1) {
+      await page.getByRole("button", { name: "Next Step →" }).click();
+    }
+
+    await expect(page.getByText("No sales lines added yet.")).toBeVisible();
+    await expect(
+      page.getByText("No operating expenses added yet."),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "← Previous Step" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Step 4: Means of Finance" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "← Previous Step" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Step 3: Project Cost Breakdown" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "+ Add Cost Manually" }).click();
+    const costRow = page.locator("table tbody tr").first();
+    await costRow.locator("input").nth(0).fill("Food processing equipment");
+    await costRow.locator("input").nth(1).fill("500000");
+
+    await page.getByRole("button", { name: "Next Step →" }).click();
+    await page.getByRole("button", { name: "+ Add Financing Source" }).click();
+    await page.getByRole("button", { name: "+ Add Financing Source" }).click();
+    const financeRows = page.locator("table tbody tr");
+    const promoterFinance = financeRows.nth(0);
+    await promoterFinance.locator("input").nth(0).fill("Promoter contribution");
+    await promoterFinance.locator("input").nth(1).fill("125000");
+    const termLoanFinance = financeRows.nth(1);
+    await termLoanFinance.locator("input").nth(0).fill("Bank term loan");
+    await termLoanFinance.locator("select").selectOption("TERM_LOAN");
+    await termLoanFinance.locator("input").nth(1).fill("375000");
+
+    await page.getByRole("button", { name: "Next Step →" }).click();
+    await page.getByRole("button", { name: "+ Add Product Line" }).click();
+    await page.getByRole("button", { name: "+ Add Product Line" }).click();
+    const productRows = page.locator("table").nth(0).locator("tbody tr");
+    for (const [index, values] of [
+      ["Millet snack packs", "packs", "20000", "40", "60", "8", "4"],
+      ["Millet flour", "kg", "12000", "55", "50", "6", "3"],
+    ].entries()) {
+      const inputs = productRows.nth(index).locator("input");
+      for (const [inputIndex, value] of values.entries()) {
+        await inputs.nth(inputIndex).fill(value);
+      }
+    }
+
+    await page.getByRole("button", { name: "+ Add Expense Line" }).click();
+    await page.getByRole("button", { name: "+ Add Expense Line" }).click();
+    const expenseRows = page.locator("table").nth(1).locator("tbody tr");
+    const materialRow = expenseRows.nth(0);
+    await materialRow.locator("input").nth(0).fill("Raw millet and packaging");
+    await materialRow.locator("input").nth(1).fill("45");
+    const wagesRow = expenseRows.nth(1);
+    await wagesRow.locator("input").nth(0).fill("Production wages");
+    await wagesRow.locator("select").nth(0).selectOption("WAGES");
+    await wagesRow.locator("select").nth(1).selectOption("FIXED_ANNUAL_AMOUNT");
+    await wagesRow.locator("input").nth(1).fill("240000");
+    await wagesRow.locator("input").nth(2).fill("5");
+
+    await page.getByRole("button", { name: "Next Step →" }).click();
+    await page.getByRole("button", { name: "Next Step →" }).click();
+    await fieldFor("Total Sanctioned Principal (₹) *").fill("375000");
+    await fieldFor("Annual Interest Rate (%) *").fill("10");
+    await fieldFor("Repayment Tenure (Years) *").fill("5");
+    await page.getByRole("button", { name: "Next Step →" }).click();
+    await page.getByRole("button", { name: "Next Step →" }).click();
+
+    await page
+      .getByRole("button", { name: /Run Calculation/ })
+      .first()
+      .click();
+    await expect(
+      page.getByRole("heading", {
+        name: "Step 10: Financial Statements & Feasibility Results",
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Detailed Project Report")).toBeVisible();
+
+    await page.getByRole("button", { name: "Preview DPR" }).click();
+    await expect(page.getByText(/sections/)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Generate DPR" }),
+    ).toBeEnabled();
+    await page.getByRole("button", { name: "Generate DPR" }).click();
+    await expect(page.getByRole("status")).toContainText(
+      "DPR Version 1 is ready",
+    );
+
+    for (const label of ["PDF", "Word", "Excel"]) {
+      const downloadPromise = page.waitForEvent("download");
+      await page
+        .getByRole("button", { name: label, exact: true })
+        .first()
+        .click();
+      const download = await downloadPromise;
+      expect(await download.path()).toBeTruthy();
+    }
+
+    await page.reload();
+    await expect(page.getByText("v1", { exact: true })).toBeVisible();
+    const repeatDownload = page.waitForEvent("download");
+    await page
+      .getByRole("button", { name: "PDF", exact: true })
+      .first()
+      .click();
+    expect(await (await repeatDownload).path()).toBeTruthy();
+
+    await page.goto("/");
+    await page.getByText(projectName, { exact: true }).click();
+    await expect(page).toHaveURL(/\/projects\/[a-zA-Z0-9-]+$/);
+    await expect(
+      page.getByRole("heading", {
+        name: "Step 10: Financial Statements & Feasibility Results",
       }),
     ).toBeVisible();
 
-    // Check Users tab
-    await page.goto("/admin/users");
+    await page.getByRole("button", { name: /Sales & Costs/ }).click();
     await expect(
-      page.getByRole("heading", { name: /User & Role Management/i }),
-    ).toBeVisible();
-
-    // Check Projects tab
-    await page.goto("/admin/projects");
-    await expect(
-      page.getByRole("heading", {
-        name: /Tenant Projects & Portfolio Explorer/i,
-      }),
-    ).toBeVisible();
-
-    // Check Schemes tab
-    await page.goto("/admin/schemes");
-    await expect(
-      page.getByRole("heading", {
-        name: /Government Scheme & Program Registry/i,
-      }),
-    ).toBeVisible();
-
-    // Check Audit Trail tab
-    await page.goto("/admin/audit");
-    await expect(
-      page.getByRole("heading", {
-        name: /Administrative Audit Trail & Access Logs/i,
-      }),
-    ).toBeVisible();
-
-    // Check Diagnostics tab
-    await page.goto("/admin/diagnostics");
-    await expect(
-      page.getByRole("heading", {
-        name: /System Diagnostics & Runtime Telemetry/i,
-      }),
+      page.locator('input[value="Millet snack packs"]'),
     ).toBeVisible();
   });
 });

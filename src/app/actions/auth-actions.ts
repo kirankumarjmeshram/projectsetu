@@ -49,8 +49,8 @@ export async function signInAction(
 
   try {
     const db = getDb();
-    if (config.allowDevSeed || config.nodeEnv !== "production") {
-      await seedDefaultUsers(db); // Ensure demo users exist if dev
+    if (config.allowDevSeed) {
+      await seedDefaultUsers(db);
     }
 
     const userRepo = new PgUserRepository(db);
@@ -119,6 +119,22 @@ export async function signUpAction(
   input: CreateUserInput,
 ): Promise<AuthResult> {
   const normalizedEmail = input.email.toLowerCase().trim();
+  const normalizedName = input.name.trim();
+
+  if (!normalizedName) {
+    return { success: false, error: "Name is required." };
+  }
+
+  if (!normalizedEmail || !normalizedEmail.includes("@")) {
+    return { success: false, error: "Enter a valid email address." };
+  }
+
+  if (!input.password || input.password.length < 8) {
+    return {
+      success: false,
+      error: "Password must be at least 8 characters long.",
+    };
+  }
 
   try {
     const db = getDb();
@@ -132,17 +148,10 @@ export async function signUpAction(
       };
     }
 
-    if (!input.password || input.password.length < 8) {
-      return {
-        success: false,
-        error: "Password must be at least 8 characters long.",
-      };
-    }
-
     const passwordHash = await hashPassword(input.password);
     const userRow = await userRepo.create({
       email: normalizedEmail,
-      name: input.name.trim(),
+      name: normalizedName,
       passwordHash,
       role: "USER",
       isActive: true,

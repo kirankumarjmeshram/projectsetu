@@ -66,7 +66,12 @@ export async function buildDprReportModel(
       : "No scheme-composed funding applies.",
   } as const;
   let order = 1;
-  const add = async (id: string, title: string, tables: ReportTable[] = []) => {
+  const add = async (
+    id: string,
+    title: string,
+    tables: ReportTable[] = [],
+    userNarrative?: string,
+  ) => {
     const allowedFinancialValues = tables.flatMap((table) =>
       table.rows.flatMap((row) =>
         row.flatMap((cell) =>
@@ -74,12 +79,18 @@ export async function buildDprReportModel(
         ),
       ),
     );
-    const generated = await provider.generate({
-      sectionId: id,
-      sectionTitle: title,
-      facts,
-      allowedFinancialValues,
-    });
+    const generated = userNarrative?.trim()
+      ? {
+          text: userNarrative.trim(),
+          provenance: "USER_APPROVED" as const,
+          approved: true,
+        }
+      : await provider.generate({
+          sectionId: id,
+          sectionTitle: title,
+          facts,
+          allowedFinancialValues,
+        });
     sections.push({
       id,
       title,
@@ -144,60 +155,149 @@ export async function buildDprReportModel(
       ],
     ),
   ]);
-  await add("applicant-profile", "Applicant / Promoter Profile", [
-    t(
-      "applicant",
-      "Applicant",
-      ["Field", "Value"],
-      [
-        [textCell("Name"), textCell(p.applicant.name)],
+  await add(
+    "applicant-profile",
+    "Applicant / Promoter Profile",
+    [
+      t(
+        "applicant",
+        "Applicant",
+        ["Field", "Value"],
         [
-          textCell("Applicant Type"),
-          textCell(p.applicant.applicantType.replaceAll("_", " ")),
+          [textCell("Name"), textCell(p.applicant.name)],
+          [
+            textCell("Applicant Type"),
+            textCell(p.applicant.applicantType.replaceAll("_", " ")),
+          ],
+          [
+            textCell("Enterprise Status"),
+            textCell(p.applicant.enterpriseStatus),
+          ],
+          ...(p.applicant.educationQualification
+            ? [
+                [
+                  textCell("Qualification"),
+                  textCell(p.applicant.educationQualification),
+                ],
+              ]
+            : []),
+          ...(p.applicant.experienceYears !== undefined
+            ? [
+                [
+                  textCell("Relevant Experience"),
+                  textCell(`${p.applicant.experienceYears} years`),
+                ],
+              ]
+            : []),
         ],
-        [textCell("Enterprise Status"), textCell(p.applicant.enterpriseStatus)],
-      ],
-    ),
-  ]);
-  await add("project-profile", "Enterprise / Project Profile", [
-    t(
-      "project",
-      "Project",
-      ["Field", "Value"],
-      [
-        [textCell("Project"), textCell(p.project.name)],
-        [textCell("Activity"), textCell(p.project.industryActivity)],
+      ),
+    ],
+    p.applicant.background,
+  );
+  await add(
+    "project-profile",
+    "Enterprise / Project Profile",
+    [
+      t(
+        "project",
+        "Project",
+        ["Field", "Value"],
         [
-          textCell("Location"),
-          textCell(
-            [p.project.address?.district, p.project.address?.state]
-              .filter(Boolean)
-              .join(", ") || "Not supplied",
+          [textCell("Project"), textCell(p.project.name)],
+          ...(p.project.enterpriseName
+            ? [[textCell("Enterprise"), textCell(p.project.enterpriseName)]]
+            : []),
+          [textCell("Activity"), textCell(p.project.industryActivity)],
+          [
+            textCell("Location"),
+            textCell(
+              [p.project.address?.district, p.project.address?.state]
+                .filter(Boolean)
+                .join(", ") || "Not supplied",
+            ),
+          ],
+          [
+            textCell("Projection Period"),
+            textCell(`${p.project.projectionPeriodYears} years`),
+          ],
+        ],
+      ),
+    ],
+    p.project.projectDescription,
+  );
+
+  const optionalNarratives = [
+    ["objectives", "Project Objectives", p.dprDetails?.businessObjective],
+    [
+      "industry-overview",
+      "Industry / Business Overview",
+      p.project.natureOfBusiness,
+    ],
+    [
+      "product-description",
+      "Product / Service Description",
+      p.dprDetails?.productServiceDescription,
+    ],
+    [
+      "market-sales",
+      "Market & Sales Plan",
+      [
+        p.dprDetails?.targetMarket,
+        p.dprDetails?.marketGeography,
+        p.dprDetails?.competition,
+        p.dprDetails?.marketingStrategy,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+    ],
+    [
+      "process",
+      "Manufacturing / Service Process",
+      p.dprDetails?.operatingProcess,
+    ],
+    [
+      "raw-materials",
+      "Raw Materials / Inputs",
+      p.dprDetails?.rawMaterialAvailability,
+    ],
+    [
+      "infrastructure",
+      "Infrastructure & Utilities",
+      p.dprDetails?.infrastructureUtilities,
+    ],
+    ["manpower", "Manpower", p.dprDetails?.manpowerPlan],
+    [
+      "implementation",
+      "Implementation Schedule",
+      p.dprDetails?.implementationPlan,
+    ],
+  ] as const;
+  for (const [id, title, narrative] of optionalNarratives) {
+    if (narrative?.trim()) await add(id, title, [], narrative);
+  }
+
+  if (p.revenueProducts.length > 0) {
+    await add("installed-capacity", "Installed Capacity & Utilisation", [
+      t(
+        "capacity-assumptions",
+        "Year 1 Capacity Assumptions",
+        ["Product / Service", "Unit", "Installed Capacity", "Utilisation"],
+        p.revenueProducts.map((product, index) => [
+          textCell(product.name || "Not provided"),
+          textCell(product.unit || "Not provided"),
+          financialCell(
+            "INTEGER",
+            product.quantityYear1,
+            `input.revenueProducts.${index}.quantityYear1`,
           ),
-        ],
-        [
-          textCell("Projection Period"),
-          textCell(`${p.project.projectionPeriodYears} years`),
-        ],
-      ],
-    ),
-  ]);
-  for (const [id, title] of [
-    ["objectives", "Project Objectives"],
-    ["industry-overview", "Industry / Business Overview"],
-    ["product-description", "Product / Service Description"],
-    ["market-sales", "Market & Sales Plan"],
-    ["process", "Manufacturing / Service Process"],
-    ["installed-capacity", "Installed Capacity"],
-    ["capacity-utilisation", "Capacity Utilisation"],
-    ["raw-materials", "Raw Materials / Inputs"],
-    ["infrastructure", "Infrastructure"],
-    ["plant-machinery", "Plant & Machinery"],
-    ["manpower", "Manpower"],
-    ["utilities", "Utilities"],
-    ["implementation", "Implementation Schedule"],
-  ] as const)
-    await add(id, title);
+          pct(
+            product.capacityUtilisationYear1,
+            `input.revenueProducts.${index}.capacityUtilisationYear1`,
+          ),
+        ]),
+      ),
+    ]);
+  }
 
   if (c.projectCost)
     await add("project-cost", "Project Cost", [
@@ -669,7 +769,14 @@ export async function buildDprReportModel(
         ],
       ),
     ]);
-  await add("risks-mitigation", "Risks & Mitigation");
+  await add(
+    "risks-mitigation",
+    "Risks & Mitigation",
+    [],
+    [p.dprDetails?.strengths, p.dprDetails?.risks, p.dprDetails?.riskMitigation]
+      .filter(Boolean)
+      .join("\n\n") || undefined,
+  );
   await add("conclusion", "Conclusion / Bankability Summary");
   await add("assumptions-notes", "Assumptions & Notes", [
     t(
@@ -691,21 +798,22 @@ export async function buildDprReportModel(
     ),
   ]);
   await add("sources", "Source / Provenance Summary");
-  await add("annexures", "Annexures", [
-    t(
-      "annexures",
-      "Approved Annexure Index",
-      ["Document", "Version", "Reference"],
-      (input.quotationReferences ?? []).map((q) => [
-        textCell(q.supplierName ?? "Approved quotation"),
-        textCell(q.documentVersion),
-        textCell(q.documentId),
-      ]),
-      [
-        "Sensitive identity documents are not automatically annexed; inclusion is explicit.",
-      ],
-    ),
-  ]);
+  if ((input.quotationReferences?.length ?? 0) > 0)
+    await add("annexures", "Annexures", [
+      t(
+        "annexures",
+        "Approved Annexure Index",
+        ["Document", "Version", "Reference"],
+        (input.quotationReferences ?? []).map((q) => [
+          textCell(q.supplierName ?? "Approved quotation"),
+          textCell(q.documentVersion),
+          textCell(q.documentId),
+        ]),
+        [
+          "Sensitive identity documents are not automatically annexed; inclusion is explicit.",
+        ],
+      ),
+    ]);
 
   return {
     identity: input.identity,
@@ -749,6 +857,7 @@ export async function buildDprReportModel(
       "Financial projections are based on supplied assumptions and the referenced ProjectSetu calculation snapshot.",
       "Calculated program benefits are subject to eligibility, verification, sanction, release conditions and the competent authority's decision.",
       "This report does not constitute bank approval, government sanction or a guarantee of financial performance.",
+      "The applicant should independently verify applicable statutory registrations, licences, permissions and lender requirements.",
     ],
   };
 }

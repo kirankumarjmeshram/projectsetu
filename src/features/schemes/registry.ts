@@ -27,7 +27,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           { label: "Cooperative Society", value: "COOPERATIVE_SOCIETY" },
           { label: "Trust / Institution", value: "INSTITUTION" },
         ],
-        defaultValue: "INDIVIDUAL",
         required: true,
       },
       {
@@ -41,7 +40,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           { label: "ST (Scheduled Tribe)", value: "ST" },
           { label: "Minority", value: "MINORITY" },
         ],
-        defaultValue: "GENERAL",
         required: true,
       },
       {
@@ -50,10 +48,9 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         type: "RADIO",
         options: [
           { label: "Male", value: "MALE" },
-          { label: "Female (Special Category Benefit)", value: "FEMALE" },
+          { label: "Female", value: "FEMALE" },
           { label: "Other", value: "OTHER" },
         ],
-        defaultValue: "MALE",
         required: true,
       },
       {
@@ -61,10 +58,9 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         label: "Unit Location Classification",
         type: "RADIO",
         options: [
-          { label: "Rural (Higher 25%-35% Subsidy)", value: "RURAL" },
-          { label: "Urban (15%-25% Subsidy)", value: "URBAN" },
+          { label: "Rural", value: "RURAL" },
+          { label: "Urban", value: "URBAN" },
         ],
-        defaultValue: "RURAL",
         required: true,
       },
       {
@@ -75,7 +71,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           { label: "Manufacturing", value: "MANUFACTURING" },
           { label: "Service / Business", value: "SERVICE" },
         ],
-        defaultValue: "MANUFACTURING",
         required: true,
       },
       {
@@ -89,7 +84,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           },
           { label: "Below 8th Standard", value: "BELOW_EIGHTH" },
         ],
-        defaultValue: "GRADUATE",
         required: true,
       },
       {
@@ -103,7 +97,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
             value: "EXISTING",
           },
         ],
-        defaultValue: "NEW",
         required: true,
       },
       {
@@ -111,7 +104,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         label: "Entrepreneurship Development Program (EDP) Training",
         type: "BOOLEAN",
         description: "Completed or undertaking mandatory 10-day EDP training",
-        defaultValue: true,
         required: true,
       },
       {
@@ -120,7 +112,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           "Has the applicant or family claimed PMEGP / REGP / PMRY subsidy previously?",
         type: "BOOLEAN",
         description: "Must be false for 1st loan eligibility",
-        defaultValue: false,
         required: true,
       },
       {
@@ -128,7 +119,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         label:
           "Is the project in PMEGP Negative List (e.g. meat, alcohol, tobacco, polythene)?",
         type: "BOOLEAN",
-        defaultValue: false,
         required: true,
       },
     ],
@@ -151,7 +141,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         key: "location.state",
         label: "Project State Location",
         type: "TEXT",
-        defaultValue: "MAHARASHTRA",
         description: "Must be in Maharashtra for CMEGP eligibility",
         required: true,
       },
@@ -164,7 +153,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           { label: "Partnership Firm", value: "PARTNERSHIP" },
           { label: "Approved Self Help Group (SHG)", value: "APPROVED_SHG" },
         ],
-        defaultValue: "INDIVIDUAL",
         required: true,
       },
       {
@@ -173,9 +161,8 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         type: "RADIO",
         options: [
           { label: "Male", value: "MALE" },
-          { label: "Female (Special Category)", value: "FEMALE" },
+          { label: "Female", value: "FEMALE" },
         ],
-        defaultValue: "MALE",
         required: true,
       },
       {
@@ -189,7 +176,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           { label: "VJNT / SBC / OBC", value: "OBC" },
           { label: "Minority", value: "MINORITY" },
         ],
-        defaultValue: "GENERAL",
         required: true,
       },
       {
@@ -197,10 +183,9 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         label: "Location Area Classification",
         type: "RADIO",
         options: [
-          { label: "Rural (Higher Subsidy)", value: "RURAL" },
+          { label: "Rural", value: "RURAL" },
           { label: "Urban", value: "URBAN" },
         ],
-        defaultValue: "RURAL",
         required: true,
       },
     ],
@@ -228,14 +213,12 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           { label: "Farmer Producer Organisation (FPO)", value: "FPO" },
           { label: "Section 8 Company", value: "SECTION_8_COMPANY" },
         ],
-        defaultValue: "INDIVIDUAL",
         required: true,
       },
       {
         key: "nlm.has_land_or_lease",
         label: "Applicant owns or holds registered lease for required land?",
         type: "BOOLEAN",
-        defaultValue: true,
         required: true,
       },
       {
@@ -243,7 +226,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         label:
           "Has NLM capital subsidy been claimed previously for this activity?",
         type: "BOOLEAN",
-        defaultValue: false,
         required: true,
       },
     ],
@@ -271,7 +253,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
           { label: "Self Help Group (SHG)", value: "SHG" },
           { label: "Producer Cooperative", value: "PRODUCER_COOPERATIVE" },
         ],
-        defaultValue: "INDIVIDUAL",
         required: true,
       },
     ],
@@ -298,7 +279,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         key: "financing.requestedCredit",
         label: "Requested Credit / Loan Amount (₹)",
         type: "NUMBER",
-        defaultValue: "1000000.00",
         description:
           "Shishu (up to ₹50k), Kishore (₹50k-₹5L), Tarun (₹5L-₹10L), Tarun Plus (₹10L-₹20L)",
         required: true,
@@ -307,7 +287,6 @@ export const SCHEME_UI_DESCRIPTORS: readonly SchemeUiDescriptor[] = [
         key: "activity.classification",
         label: "Activity Classification",
         type: "TEXT",
-        defaultValue: "MANUFACTURING",
         required: true,
       },
     ],

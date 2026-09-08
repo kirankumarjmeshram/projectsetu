@@ -45,14 +45,19 @@ export function WizardContainer({
 }: WizardContainerProps) {
   const [input, setInput] = useState<ProjectWizardInput>(initialInput);
   const [activeTab, setActiveTab] = useState<"WIZARD" | "DOCUMENTS">("WIZARD");
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [maxReachedStep, setMaxReachedStep] = useState<number>(1);
+  const [currentStep, setCurrentStep] = useState<number>(
+    initialCalculationResult ? 10 : 1,
+  );
+  const [maxReachedStep, setMaxReachedStep] = useState<number>(
+    initialCalculationResult ? 10 : 1,
+  );
   const [calculationResult, setCalculationResult] =
     useState<ProjectCalculationResult | null>(initialCalculationResult);
   const [isPending, startTransition] = useTransition();
   const [saveStatus, setSaveStatus] = useState<
     "SAVED" | "SAVING" | "ERROR" | "IDLE"
   >("IDLE");
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const totalCost = sumDecimalStrings(
     input.costItems.map((item) => item.amount),
@@ -92,8 +97,23 @@ export function WizardContainer({
   const handleExecuteCalculation = () => {
     startTransition(async () => {
       if (!onRunCalculation) return;
-      if (onSaveDraft) await onSaveDraft(input);
+      setActionError(null);
+      if (onSaveDraft) {
+        const saved = await onSaveDraft(input);
+        if (!saved.success) {
+          setSaveStatus("ERROR");
+          setActionError(saved.error ?? "The project could not be saved.");
+          return;
+        }
+        setSaveStatus("SAVED");
+      }
       const response = await onRunCalculation(input);
+      if (!response.success) {
+        setActionError(
+          response.error ?? "The financial calculation could not be completed.",
+        );
+        return;
+      }
       setCalculationResult(response.result);
       setCurrentStep(10);
       setMaxReachedStep(10);
@@ -194,6 +214,14 @@ export function WizardContainer({
       </div>
 
       {/* When activeTab is DOCUMENTS, show DocumentListView */}
+      {actionError && (
+        <div
+          role="alert"
+          className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"
+        >
+          <strong>Action required:</strong> {actionError}
+        </div>
+      )}
       {activeTab === "DOCUMENTS" ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs md:p-8">
           <DocumentListView
@@ -256,6 +284,10 @@ export function WizardContainer({
                 }
                 onExpenseChange={(operatingExpenses) =>
                   setInput({ ...input, operatingExpenses })
+                }
+                dprDetails={input.dprDetails ?? {}}
+                onDprDetailsChange={(dprDetails) =>
+                  setInput({ ...input, dprDetails })
                 }
               />
             )}

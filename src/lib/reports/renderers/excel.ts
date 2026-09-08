@@ -129,6 +129,7 @@ export async function renderExcel(
       "Exact snapshot columns are stored as text to preserve Decimal.js precision; display columns use the central presentation policy.";
     sheet.getCell("A3").font = { color: { argb: "FF475569" } };
     let row = 5;
+    let firstTableHeaderRow: number | undefined;
     for (const section of model.sections.filter((candidate) =>
       mapping[name].includes(candidate.id),
     )) {
@@ -146,8 +147,10 @@ export async function renderExcel(
         sheet.mergeCells(row + 1, 1, row + 1, 8);
         row += 3;
       }
-      for (const reportTable of section.tables)
+      for (const reportTable of section.tables) {
+        firstTableHeaderRow ??= row + 1;
         row = addTable(sheet, reportTable, row);
+      }
     }
     if (row === 5) {
       sheet.getCell(row, 1).value = "Not applicable for this report version.";
@@ -160,7 +163,15 @@ export async function renderExcel(
       column.width = index % 2 === 0 ? 22 : 24;
     });
     sheet.autoFilter = undefined;
+    sheet.views = [
+      {
+        state: "frozen",
+        ySplit: firstTableHeaderRow ?? 4,
+        showGridLines: false,
+      },
+    ];
     sheet.pageSetup = {
+      printArea: `A1:${sheet.getColumn(sheet.columnCount).letter}${sheet.rowCount}`,
       paperSize: 9,
       orientation: "landscape",
       fitToPage: true,

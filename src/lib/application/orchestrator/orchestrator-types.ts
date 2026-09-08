@@ -58,6 +58,10 @@ export interface ProjectDetailsInput {
   readonly projectionPeriodYears: number;
   readonly implementationFrom?: ISODate;
   readonly implementationUntil?: ISODate;
+  readonly enterpriseName?: string;
+  readonly natureOfBusiness?: string;
+  readonly reportPurpose?: string;
+  readonly projectDescription?: string;
 }
 
 export interface ApplicantPromoterInput {
@@ -85,6 +89,27 @@ export interface ApplicantPromoterInput {
   readonly panNumber?: string;
   readonly aadhaarNumber?: string;
   readonly udymRegistrationNumber?: string;
+  readonly experienceSummary?: string;
+  readonly background?: string;
+  readonly existingActivity?: string;
+  readonly address?: string;
+}
+
+export interface DprBusinessDetailsInput {
+  readonly businessObjective?: string;
+  readonly productServiceDescription?: string;
+  readonly operatingProcess?: string;
+  readonly targetMarket?: string;
+  readonly marketGeography?: string;
+  readonly competition?: string;
+  readonly marketingStrategy?: string;
+  readonly rawMaterialAvailability?: string;
+  readonly infrastructureUtilities?: string;
+  readonly manpowerPlan?: string;
+  readonly implementationPlan?: string;
+  readonly strengths?: string;
+  readonly risks?: string;
+  readonly riskMitigation?: string;
 }
 
 export interface ProjectCostItemInput {
@@ -233,6 +258,7 @@ export interface ProjectWizardInput {
   readonly taxAndReturns: TaxAndReturnsInput;
   readonly selectedPrograms: readonly ProgramSelection[];
   readonly schemeFacts?: Record<string, unknown>;
+  readonly dprDetails?: DprBusinessDetailsInput;
 }
 
 // ─── Orchestrator Output Model ───────────────────────────────────────────────

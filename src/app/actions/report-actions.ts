@@ -10,6 +10,7 @@ import type {
 } from "@/lib/application/orchestrator/orchestrator-types";
 import type { NormalizedQuotation } from "@/lib/documents/quotation/contracts";
 import { getDb } from "@/lib/persistence/db";
+import { logger } from "@/lib/logging/logger";
 import {
   PgCalculationRunRepository,
   PgCalculationSnapshotRepository,
@@ -144,7 +145,7 @@ export async function buildReportPreviewAction(projectId: string) {
     if (!project)
       return { success: false as const, error: "Project not found." };
 
-    if (user && !canAccessProject(user, project)) {
+    if (!user || !canAccessProject(user, project)) {
       return {
         success: false as const,
         error:
@@ -175,7 +176,7 @@ export async function generateReportVersionAction(
   const project = await new PgProjectRepository(db).findById(projectId);
   if (!project) return { success: false as const, error: "Project not found." };
 
-  if (user && !canMutateProject(user, project)) {
+  if (!user || !canMutateProject(user, project)) {
     return {
       success: false as const,
       error:
@@ -259,7 +260,15 @@ export async function generateReportVersionAction(
     return { success: true as const, report, validation };
   } catch (error) {
     await reportRepo.update(reportId, { status: "FAILED" });
-    return { success: false as const, error: (error as Error).message };
+    logger.error("DPR report generation failed", error, {
+      projectId,
+      reportId,
+    });
+    return {
+      success: false as const,
+      error:
+        "The DPR could not be generated. Verify the project inputs and try again.",
+    };
   }
 }
 
@@ -268,7 +277,13 @@ export async function listReportVersionsAction(projectId: string) {
     const user = await getCurrentUser();
     const db = getDb();
     const project = await new PgProjectRepository(db).findById(projectId);
-    if (project && user && !canAccessProject(user, project)) {
+    if (!project)
+      return {
+        success: false as const,
+        error: "Project not found.",
+        reports: [],
+      };
+    if (!user || !canAccessProject(user, project)) {
       return {
         success: false as const,
         error:
@@ -282,6 +297,7 @@ export async function listReportVersionsAction(projectId: string) {
       reports: await new PgReportMetadataRepository(db).findByProjectId(
         projectId,
       ),
+      currentInputSnapshotId: project.currentInputSnapshotId,
     };
   } catch (error) {
     return {
@@ -299,7 +315,8 @@ export async function getReportVersionAction(
   const user = await getCurrentUser();
   const db = getDb();
   const project = await new PgProjectRepository(db).findById(projectId);
-  if (project && user && !canAccessProject(user, project)) {
+  if (!project) return { success: false as const, error: "Project not found." };
+  if (!user || !canAccessProject(user, project)) {
     return {
       success: false as const,
       error: "Access denied. You do not have permission to view this report.",
@@ -327,7 +344,8 @@ export async function downloadReportArtifactAction(
   const user = await getCurrentUser();
   const db = getDb();
   const project = await new PgProjectRepository(db).findById(projectId);
-  if (project && user && !canAccessProject(user, project)) {
+  if (!project) return { success: false as const, error: "Project not found." };
+  if (!user || !canAccessProject(user, project)) {
     return {
       success: false as const,
       error:

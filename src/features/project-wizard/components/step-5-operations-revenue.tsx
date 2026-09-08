@@ -2,6 +2,7 @@ import React from "react";
 
 import { generateId } from "@/lib/persistence/id";
 import type {
+  DprBusinessDetailsInput,
   OperatingExpenseInput,
   RevenueProductInput,
 } from "@/lib/application/orchestrator/orchestrator-types";
@@ -11,12 +12,16 @@ interface Step5OperationsRevenueProps {
   operatingExpenses: readonly OperatingExpenseInput[];
   onRevenueChange: (products: readonly RevenueProductInput[]) => void;
   onExpenseChange: (expenses: readonly OperatingExpenseInput[]) => void;
+  dprDetails: DprBusinessDetailsInput;
+  onDprDetailsChange: (details: DprBusinessDetailsInput) => void;
 }
 
 const OPEX_CATEGORIES = [
   { label: "Raw Materials & Direct Consumables", value: "RAW_MATERIALS" },
+  { label: "Consumables", value: "CONSUMABLES" },
   { label: "Direct Factory Wages & Labor", value: "WAGES" },
   { label: "Power, Electricity & Fuel", value: "POWER_AND_ELECTRICITY" },
+  { label: "Fuel", value: "FUEL" },
   { label: "Administrative Salaries & Staff", value: "SALARIES" },
   { label: "Plant Repairs & Maintenance", value: "REPAIRS_AND_MAINTENANCE" },
   { label: "Marketing, Selling & Distribution", value: "SELLING_EXPENSES" },
@@ -26,6 +31,8 @@ const OPEX_CATEGORIES = [
   },
   { label: "Rent & Factory Lease", value: "RENT" },
   { label: "Insurance", value: "INSURANCE" },
+  { label: "Packing", value: "PACKING_EXPENSES" },
+  { label: "Other Operating Expense", value: "OTHER" },
 ];
 
 export function Step5OperationsRevenue({
@@ -33,6 +40,8 @@ export function Step5OperationsRevenue({
   operatingExpenses,
   onRevenueChange,
   onExpenseChange,
+  dprDetails,
+  onDprDetailsChange,
 }: Step5OperationsRevenueProps) {
   // Products handlers
   const handleAddProduct = () => {
@@ -40,13 +49,13 @@ export function Step5OperationsRevenue({
       ...revenueProducts,
       {
         id: generateId(),
-        name: "New Product / Service Line",
-        unit: "Units",
-        quantityYear1: "1000",
-        unitPriceYear1: "100.00",
-        capacityUtilisationYear1: "60",
-        annualQuantityGrowth: "10",
-        annualPriceEscalation: "3",
+        name: "",
+        unit: "",
+        quantityYear1: "0",
+        unitPriceYear1: "0",
+        capacityUtilisationYear1: "0",
+        annualQuantityGrowth: "0",
+        annualPriceEscalation: "0",
       },
     ]);
   };
@@ -70,11 +79,11 @@ export function Step5OperationsRevenue({
       ...operatingExpenses,
       {
         id: generateId(),
-        name: "New Operating Expense Line",
+        name: "",
         category: "RAW_MATERIALS",
         calculationMethod: "PERCENTAGE_OF_REVENUE",
         costBehavior: "VARIABLE",
-        percentageOfRevenueYear1: "10",
+        percentageOfRevenueYear1: "0",
         annualEscalation: "0",
       },
     ]);
@@ -127,6 +136,7 @@ export function Step5OperationsRevenue({
                 <th className="px-3 py-3 text-right">Unit Price (₹)</th>
                 <th className="px-3 py-3 text-right">Utilisation %</th>
                 <th className="px-3 py-3 text-right">Growth %</th>
+                <th className="px-3 py-3 text-right">Price Esc. %</th>
                 <th className="w-12 px-3 py-3 text-center"></th>
               </tr>
             </thead>
@@ -201,6 +211,18 @@ export function Step5OperationsRevenue({
                       }
                     />
                   </td>
+                  <td className="p-2 text-right">
+                    <input
+                      type="text"
+                      className="inline-block w-16 rounded-md border border-slate-200 bg-white px-2 py-1 text-right font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                      value={p.annualPriceEscalation}
+                      onChange={(e) =>
+                        handleUpdateProduct(p.id, {
+                          annualPriceEscalation: e.target.value,
+                        })
+                      }
+                    />
+                  </td>
                   <td className="p-2 text-center">
                     <button
                       type="button"
@@ -212,6 +234,18 @@ export function Step5OperationsRevenue({
                   </td>
                 </tr>
               ))}
+              {revenueProducts.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-8 text-center text-slate-500"
+                  >
+                    No sales lines added yet. Add a product or service to define
+                    installed capacity, utilisation, quantity, and selling
+                    price.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -248,6 +282,7 @@ export function Step5OperationsRevenue({
                 <th className="px-3 py-3">Method</th>
                 <th className="px-3 py-3">Behavior</th>
                 <th className="px-3 py-3 text-right">Value (₹ / %)</th>
+                <th className="px-3 py-3 text-right">Annual Esc. %</th>
                 <th className="w-12 px-3 py-3 text-center"></th>
               </tr>
             </thead>
@@ -344,6 +379,18 @@ export function Step5OperationsRevenue({
                       }}
                     />
                   </td>
+                  <td className="p-2 text-right">
+                    <input
+                      type="text"
+                      className="inline-block w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-right font-mono text-xs focus:ring-1 focus:ring-emerald-500"
+                      value={exp.annualEscalation}
+                      onChange={(e) =>
+                        handleUpdateExpense(exp.id, {
+                          annualEscalation: e.target.value,
+                        })
+                      }
+                    />
+                  </td>
                   <td className="p-2 text-center">
                     <button
                       type="button"
@@ -355,10 +402,68 @@ export function Step5OperationsRevenue({
                   </td>
                 </tr>
               ))}
+              {operatingExpenses.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-4 py-8 text-center text-slate-500"
+                  >
+                    No operating expenses added yet. Add actual raw material,
+                    payroll, utilities, rent, selling, or other operating costs.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      <details className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+        <summary className="cursor-pointer text-sm font-bold text-slate-800">
+          Optional business and market details for the DPR
+        </summary>
+        <p className="mt-1 text-xs text-slate-500">
+          Supply your own market and operating facts. Unknown information may
+          remain blank and will not be generated as fact.
+        </p>
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {(
+            [
+              ["businessObjective", "Business Objective"],
+              ["productServiceDescription", "Product / Service Description"],
+              ["operatingProcess", "Manufacturing / Service Process"],
+              ["targetMarket", "Target Customers"],
+              ["marketGeography", "Proposed Market Geography"],
+              ["competition", "Competition"],
+              ["marketingStrategy", "Marketing & Distribution Strategy"],
+              ["rawMaterialAvailability", "Raw Material / Input Availability"],
+              ["infrastructureUtilities", "Infrastructure & Utilities"],
+              ["manpowerPlan", "Manpower Plan"],
+              ["implementationPlan", "Implementation Schedule"],
+              ["strengths", "Project Strengths"],
+              ["risks", "Key Risks"],
+              ["riskMitigation", "Risk Mitigation"],
+            ] as const
+          ).map(([key, label]) => (
+            <div key={key} className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700">
+                {label}
+              </label>
+              <textarea
+                rows={3}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs"
+                value={dprDetails[key] ?? ""}
+                onChange={(event) =>
+                  onDprDetailsChange({
+                    ...dprDetails,
+                    [key]: event.target.value,
+                  })
+                }
+              />
+            </div>
+          ))}
+        </div>
+      </details>
     </div>
   );
 }

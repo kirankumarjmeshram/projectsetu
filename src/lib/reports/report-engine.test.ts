@@ -137,6 +137,32 @@ describe("DPR report content model", () => {
     ).toBe(text);
   });
 
+  it("uses applicant-supplied DPR facts and omits unavailable optional sections", async () => {
+    const model = await buildDprReportModel(
+      sourceInput({
+        dprDetails: {
+          businessObjective:
+            "Supply processed millet products to local retailers.",
+          targetMarket: "Independent retailers in the applicant's district.",
+        },
+      }),
+    );
+
+    expect(
+      model.sections.find((section) => section.id === "objectives")?.narrative,
+    ).toEqual({
+      text: "Supply processed millet products to local retailers.",
+      provenance: "USER_APPROVED",
+      approved: true,
+    });
+    expect(model.sections.some((section) => section.id === "process")).toBe(
+      false,
+    );
+    expect(
+      model.sections.some((section) => section.id === "installed-capacity"),
+    ).toBe(true);
+  });
+
   it.each([
     "GOI.PMEGP.NEW_ENTERPRISE",
     "GOI.NLM.RURAL_POULTRY",
@@ -253,6 +279,16 @@ describe("PDF, DOCX and Excel renderers", () => {
     const values = JSON.stringify(pnl.getSheetValues());
     expect(values).toContain(model.calculation.profitAndLoss!.years[0].revenue);
     expect(values).not.toMatch(/NaN|Infinity/);
+    for (const sheet of workbook.worksheets) {
+      const view = sheet.views[0];
+      expect(view?.state).toBe("frozen");
+      expect(
+        view && "ySplit" in view ? view.ySplit : undefined,
+      ).toBeGreaterThanOrEqual(4);
+      expect(sheet.pageSetup.printArea).toBe(
+        `A1:${sheet.getColumn(sheet.columnCount).letter}${sheet.rowCount}`,
+      );
+    }
   });
 
   it("uses the same exact authoritative values across all adapters", async () => {

@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "ProjectSetu",
-  description: "Engineering foundation for bankable project reports.",
+  description: "Prepare bankable project reports and financial projections.",
 };
 
 export default function RootLayout({
