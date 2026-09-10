@@ -615,6 +615,45 @@ export function orchestrateProjectCalculation(
     ? depreciationResult.value
     : undefined;
 
+  if (projectCostSummary && depreciation) {
+    const nonWorkingCapitalCost = projectCostSummary.lines
+      .filter((line) => line.input.category !== "MARGIN_FOR_WORKING_CAPITAL")
+      .reduce(
+        (sum, line) => sum.plus(toDecimal(line.finalAmount)),
+        toDecimal(monetaryAmount("0")),
+      );
+    const modeledAssetCost = depreciation.yearlySummaries.reduce(
+      (sum, year, index) =>
+        sum
+          .plus(toDecimal(year.additions))
+          .plus(index === 0 ? toDecimal(year.openingGrossFixedAssets) : 0),
+      toDecimal(monetaryAmount("0")),
+    );
+    if (!nonWorkingCapitalCost.equals(modeledAssetCost))
+      issues.push({
+        code: "STARTUP_COST_ACCOUNTING_INCOMPLETE",
+        severity: "WARNING",
+        section: "Project Cost",
+        message:
+          "Project cost does not reconcile to the modeled asset acquisitions. Land, pre-operative and other unmodeled costs require an accounting treatment before DPR export.",
+      });
+  }
+  if (
+    input.financingSources.some(
+      (source) =>
+        ["WORKING_CAPITAL_LOAN", "UNSECURED_LOAN", "CAPITAL_SUBSIDY"].includes(
+          source.type,
+        ) && !toDecimal(toMonetary(source.amount)).isZero(),
+    )
+  )
+    issues.push({
+      code: "FINANCING_CASH_FLOW_INCOMPLETE",
+      severity: "WARNING",
+      section: "Means of Finance",
+      message:
+        "The entered working-capital loan, unsecured loan or subsidy requires an explicit drawdown and balance-sheet schedule before DPR export.",
+    });
+
   // ─── 6. Loan Repayment Schedule ────────────────────────────────────────────
   const frequencyToPeriodsPerYear = {
     MONTHLY: 12,
@@ -776,7 +815,25 @@ export function orchestrateProjectCalculation(
         {
           profitAndLoss,
           workingCapitalChanges: wcChangeResult.value,
-          capitalExpenditure: capexResult.value,
+          // This wizard finances startup assets in year one. The generic
+          // additions adapter intentionally excludes their opening cost.
+          capitalExpenditure: {
+            ...capexResult.value,
+            years: capexResult.value.years.map((row) => ({
+              ...row,
+              capitalExpenditure:
+                row.year === 1
+                  ? toMonetaryAmount(
+                      toDecimal(row.capitalExpenditure).plus(
+                        toDecimal(
+                          depreciation.yearlySummaries[0]
+                            .openingGrossFixedAssets,
+                        ),
+                      ),
+                    )
+                  : row.capitalExpenditure,
+            })),
+          },
           financingInflows: financingInflowsSchedule,
           loanCashPayments: loanPaymentResult.value,
         },
@@ -1076,7 +1133,16 @@ export function orchestrateProjectCalculation(
       periodIndex: 0,
       components: {
         initialInvestment: assumption(
-          projectCostSummary.totalProjectCost,
+          toMonetaryAmount(
+            projectCostSummary.lines
+              .filter(
+                (line) => line.input.category !== "MARGIN_FOR_WORKING_CAPITAL",
+              )
+              .reduce(
+                (sum, line) => sum.plus(toDecimal(line.finalAmount)),
+                toDecimal(monetaryAmount("0")),
+              ),
+          ),
           defaultSource,
         ),
         operatingProjectCashFlow: assumption(
@@ -1131,10 +1197,17 @@ export function orchestrateProjectCalculation(
             monetaryAmount("0.00"),
             defaultSource,
           ),
-          workingCapitalRecovery:
-            yr === projectionPeriodYears && wcSum
-              ? assumption(wcSum.workingCapitalGap, defaultSource)
-              : undefined,
+          // Release a falling requirement now; recover only the remaining
+          // balance at the terminal date, so neither recovery is duplicated.
+          workingCapitalRecovery: assumption(
+            toMonetaryAmount(
+              toDecimal(incrementalWc)
+                .negated()
+                .clamp(0, Infinity)
+                .plus(yr === projectionPeriodYears ? wcGap : 0),
+            ),
+            defaultSource,
+          ),
         },
       });
     }
