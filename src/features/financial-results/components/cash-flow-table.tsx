@@ -58,6 +58,16 @@ export function CashFlowTable({ cashFlow }: CashFlowTableProps) {
           </tr>
           <tr className="hover:bg-slate-50/40">
             <td className="px-4 py-2 pl-6 text-slate-700">
+              Add: Interest charged (cash paid under financing)
+            </td>
+            {years.map((y) => (
+              <td key={y.year} className="px-4 py-2 text-right tabular-nums">
+                {formatIndianCurrency(y.interestExpenseAddBack ?? "0")}
+              </td>
+            ))}
+          </tr>
+          <tr className="hover:bg-slate-50/40">
+            <td className="px-4 py-2 pl-6 text-slate-700">
               Working Capital Requirement Change
             </td>
             {years.map((y) => (

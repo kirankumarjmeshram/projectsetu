@@ -9,6 +9,25 @@ export function validateDprReport(
   model: DprReportModel,
 ): ReportValidationResult {
   const issues: ReportValidationIssue[] = [];
+  if (!model.calculation.success)
+    issues.push({
+      code: "FAILED_CALCULATION",
+      severity: "BLOCKING",
+      message: "Resolve calculation errors before DPR export.",
+    });
+  for (const issue of model.calculation.issues) {
+    if (
+      [
+        "STARTUP_COST_ACCOUNTING_INCOMPLETE",
+        "FINANCING_CASH_FLOW_INCOMPLETE",
+      ].includes(issue.code)
+    )
+      issues.push({
+        code: issue.code,
+        severity: "BLOCKING",
+        message: issue.message,
+      });
+  }
   const required = [
     "executive-summary",
     "project-cost",
@@ -84,7 +103,7 @@ export function validateDprReport(
     if (!row.isBalanced)
       issues.push({
         code: "UNBALANCED_BALANCE_SHEET",
-        severity: "WARNING",
+        severity: "BLOCKING",
         message: `Year ${row.year} balance sheet is not balanced.`,
         sectionId: "balance-sheet",
       });

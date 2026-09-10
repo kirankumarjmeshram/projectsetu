@@ -105,6 +105,7 @@ function expectCashFlowReconciliation(result: CashFlowSchedule): void {
       toMonetaryAmount(
         toDecimal(year.profitAfterTax)
           .plus(toDecimal(year.depreciationAddBack))
+          .plus(toDecimal(year.interestExpenseAddBack ?? monetaryAmount("0")))
           .minus(toDecimal(year.changeInNetWorkingCapital)),
       ),
     ).toBe(year.operatingCashFlow);
@@ -362,6 +363,7 @@ describe("cash-flow schedules", () => {
         openingCash: "10",
         profitAfterTax: "500",
         depreciationAddBack: "100",
+        interestExpenseAddBack: "0",
         changeInNetWorkingCapital: "50",
         operatingCashFlow: "550",
         capitalExpenditure: "200",
@@ -1069,7 +1071,9 @@ describe("cash-flow authoritative composition", () => {
       }),
     );
 
-    expect(composed).toEqual([yearInput(1)]);
+    expect(composed).toEqual([
+      yearInput(1, { interestExpenseAddBack: monetaryAmount("50") }),
+    ]);
     expect(result.years[0]).toMatchObject({
       profitAfterTax: "500",
       depreciationAddBack: "100",
@@ -1082,7 +1086,7 @@ describe("cash-flow authoritative composition", () => {
     });
   });
 
-  it("copies PAT and adds back only depreciation without subtracting tax again", () => {
+  it("copies PAT and reverses depreciation and financing interest without subtracting tax again", () => {
     const taxedProfitAndLossYear: ProfitAndLossYear = {
       ...profitAndLossYear(1, "400", "100"),
       taxMode: "PERCENTAGE_OF_POSITIVE_PBT",
@@ -1102,7 +1106,8 @@ describe("cash-flow authoritative composition", () => {
       profitAfterTax: "400",
       depreciationAddBack: "100",
       changeInNetWorkingCapital: "50",
-      operatingCashFlow: "450",
+      operatingCashFlow: "500",
+      interestExpenseAddBack: "50",
     });
     expect(result.years[0]).not.toHaveProperty("taxExpense");
     expect(result.years[0]).not.toHaveProperty("operatingExpenses");
@@ -1175,6 +1180,7 @@ describe("cash-flow authoritative composition", () => {
 
     expect(result).toEqual([
       yearInput(1, {
+        interestExpenseAddBack: monetaryAmount("50"),
         changeInNetWorkingCapital: monetaryAmount("0"),
         capitalExpenditure: monetaryAmount("0"),
         promoterContribution: monetaryAmount("0"),
@@ -1212,6 +1218,7 @@ describe("cash-flow authoritative composition", () => {
 
     expect(result).toEqual([
       yearInput(1, {
+        interestExpenseAddBack: monetaryAmount("50"),
         profitAfterTax: monetaryAmount("0"),
         depreciation: monetaryAmount("0"),
         changeInNetWorkingCapital: monetaryAmount("0"),

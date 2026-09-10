@@ -10,6 +10,8 @@ export interface CashFlowYearInput {
   readonly year: ProjectionYear;
   readonly profitAfterTax: MonetaryAmount;
   readonly depreciation: MonetaryAmount;
+  /** P&L interest reversed because actual cash interest is classified as financing. */
+  readonly interestExpenseAddBack?: MonetaryAmount;
   /** Current-year NWC less prior-year NWC; positive is a cash outflow. */
   readonly changeInNetWorkingCapital: MonetaryAmount;
   readonly capitalExpenditure: MonetaryAmount;
@@ -30,6 +32,7 @@ export interface CashFlowYear {
   readonly openingCash: MonetaryAmount;
   readonly profitAfterTax: MonetaryAmount;
   readonly depreciationAddBack: MonetaryAmount;
+  readonly interestExpenseAddBack?: MonetaryAmount;
   readonly changeInNetWorkingCapital: MonetaryAmount;
   readonly operatingCashFlow: MonetaryAmount;
   readonly capitalExpenditure: MonetaryAmount;

@@ -23,6 +23,10 @@ const metric = (value: MetricResult, path: string): ReportCell =>
   value.status === "DEFINED"
     ? financialCell("RATIO", value.value, path)
     : textCell(value.status.replaceAll("_", " "), "STATUS");
+const metricPercentage = (value: MetricResult, path: string): ReportCell =>
+  value.status === "DEFINED"
+    ? pct(value.value, path)
+    : textCell(value.status.replaceAll("_", " "), "STATUS");
 const t = (
   id: string,
   title: string,
@@ -540,6 +544,9 @@ export async function buildDprReportModel(
           m(row.netCashMovement, `cashFlow.${i}.netMovement`),
           m(row.closingCash, `cashFlow.${i}.closingCash`),
         ]),
+        [
+          "Operating cash flow adds back depreciation and P&L interest; actual interest paid is included once under financing. Startup asset acquisitions are included in year-one investing cash flow.",
+        ],
       ),
     ]);
   if (c.balanceSheet)
@@ -576,9 +583,9 @@ export async function buildDprReportModel(
       metric(row.interestCoverageRatio, `metrics.${i}.interestCoverage`),
       metric(row.debtEquityRatio, `metrics.${i}.debtEquity`),
       metric(row.currentRatio, `metrics.${i}.currentRatio`),
-      metric(row.breakEvenPercentage, `metrics.${i}.breakEven`),
-      metric(row.roi, `metrics.${i}.roi`),
-      metric(row.roce, `metrics.${i}.roce`),
+      metricPercentage(row.breakEvenPercentage, `metrics.${i}.breakEven`),
+      metricPercentage(row.roi, `metrics.${i}.roi`),
+      metricPercentage(row.roce, `metrics.${i}.roce`),
     ]);
     await add("dscr", "DSCR", [
       t(
@@ -607,7 +614,7 @@ export async function buildDprReportModel(
     await add("investment-returns", "Investment Returns", [
       t(
         "returns",
-        "Investment Returns",
+        "Indicative Pre-tax Project Returns",
         ["Metric", "Status", "Value"],
         [
           [
@@ -640,6 +647,9 @@ export async function buildDprReportModel(
               ? financialCell("RATIO", pi.value, "investmentReturns.pi")
               : textCell("Not defined"),
           ],
+        ],
+        [
+          "Pre-tax, unlevered project cash flows: EBITDA less operating working-capital investment; initial working-capital reserve is not counted twice. Terminal working capital is assumed recovered; no asset salvage is assumed. These are indicative assumptions, not equity returns or lender approval.",
         ],
       ),
     ]);

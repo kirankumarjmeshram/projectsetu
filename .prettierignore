@@ -5,3 +5,8 @@ out
 package-lock.json
 test-results
 playwright-report
+
+tmp
+data
+.postgres-test-data
+.postgres-dev-data

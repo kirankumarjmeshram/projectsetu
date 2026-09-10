@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 
 test.describe("ProjectSetu practical project lifecycle", () => {
   test("health and readiness report application and database status", async ({
@@ -47,6 +48,12 @@ test.describe("ProjectSetu practical project lifecycle", () => {
     await page.getByRole("button", { name: /Create Account →/ }).click();
 
     await expect(page).toHaveURL("/");
+    await page.getByRole("button", { name: "Sign Out", exact: true }).click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.locator('input[type="email"]').fill(uniqueEmail);
+    await page.locator('input[type="password"]').fill("ProjectSetu!2026");
+    await page.getByRole("button", { name: /Sign In →/ }).click();
+    await expect(page).toHaveURL("/");
     await expect(
       page.getByRole("heading", { name: "Project Workspace & DPR Portfolio" }),
     ).toBeVisible();
@@ -81,6 +88,10 @@ test.describe("ProjectSetu practical project lifecycle", () => {
     );
 
     for (let step = 1; step < 5; step += 1) {
+      if (step === 2)
+        await fieldFor("Lead Promoter / Contact Name *").fill(
+          "Anita Deshmukh — test applicant",
+        );
       await page.getByRole("button", { name: "Next Step →" }).click();
     }
 
@@ -99,9 +110,13 @@ test.describe("ProjectSetu practical project lifecycle", () => {
     ).toBeVisible();
 
     await page.getByRole("button", { name: "+ Add Cost Manually" }).click();
+    await page.getByRole("button", { name: "+ Add Cost Manually" }).click();
+    const secondCost = page.locator("table tbody tr").nth(1);
+    await secondCost.locator("input").nth(0).fill("Packing equipment");
+    await secondCost.locator("input").nth(1).fill("100000");
     const costRow = page.locator("table tbody tr").first();
     await costRow.locator("input").nth(0).fill("Food processing equipment");
-    await costRow.locator("input").nth(1).fill("500000");
+    await costRow.locator("input").nth(1).fill("400000");
 
     await page.getByRole("button", { name: "Next Step →" }).click();
     await page.getByRole("button", { name: "+ Add Financing Source" }).click();
@@ -171,6 +186,7 @@ test.describe("ProjectSetu practical project lifecycle", () => {
       "DPR Version 1 is ready",
     );
 
+    const originalArtifacts = new Map<string, Buffer>();
     for (const label of ["PDF", "Word", "Excel"]) {
       const downloadPromise = page.waitForEvent("download");
       await page
@@ -178,7 +194,11 @@ test.describe("ProjectSetu practical project lifecycle", () => {
         .first()
         .click();
       const download = await downloadPromise;
-      expect(await download.path()).toBeTruthy();
+      expect(await download.failure()).toBeNull();
+      expect(download.suggestedFilename()).toMatch(/^[a-zA-Z0-9_.-]+$/);
+      const content = await readFile((await download.path())!);
+      expect(content.length).toBeGreaterThan(1000);
+      originalArtifacts.set(label, content);
     }
 
     await page.reload();
@@ -203,5 +223,53 @@ test.describe("ProjectSetu practical project lifecycle", () => {
     await expect(
       page.locator('input[value="Millet snack packs"]'),
     ).toBeVisible();
+    await page
+      .locator("table")
+      .first()
+      .locator("tbody tr")
+      .first()
+      .locator("input")
+      .nth(3)
+      .fill("45");
+    await page.getByRole("button", { name: "Save Draft", exact: true }).click();
+    await expect(page.getByText("✓ Draft Saved")).toBeVisible();
+    await page.getByRole("button", { name: /Results & DPR/ }).click();
+    await expect(
+      page.getByRole("heading", { name: "No Calculation Run Yet" }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("heading", {
+        name: "Step 1: Project Identity & Location",
+      }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: /Run Calculation/ })
+      .first()
+      .click();
+    await expect(
+      page.getByRole("heading", {
+        name: "Step 10: Financial Statements & Feasibility Results",
+      }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Preview DPR" }).click();
+    await expect(
+      page.getByRole("button", { name: "Generate DPR" }),
+    ).toBeEnabled();
+    await page.getByRole("button", { name: "Generate DPR" }).click();
+    await expect(page.getByRole("status")).toContainText(
+      "DPR Version 2 is ready",
+    );
+    const v1 = page
+      .locator("tr")
+      .filter({ has: page.getByText("v1", { exact: true }) });
+    for (const label of ["PDF", "Word", "Excel"]) {
+      const downloadPromise = page.waitForEvent("download");
+      await v1.getByRole("button", { name: label, exact: true }).click();
+      const download = await downloadPromise;
+      expect(await readFile((await download.path())!)).toEqual(
+        originalArtifacts.get(label),
+      );
+    }
   });
 });

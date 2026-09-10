@@ -14,6 +14,7 @@
 
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
+import { assertTestDatabaseUrl } from "../../../../scripts/test-db-setup";
 
 import * as schema from "../schema/index";
 
@@ -34,7 +35,12 @@ export function getTestPool(): pg.Pool {
     process.env.TEST_DATABASE_URL ||
     "postgresql://postgres:password@127.0.0.1:5433/projectsetu_test";
 
-  testPool = new Pool({ connectionString, max: 5 });
+  assertTestDatabaseUrl(connectionString);
+  testPool = new Pool({
+    connectionString,
+    max: 5,
+    connectionTimeoutMillis: 10000,
+  });
   return testPool;
 }
 

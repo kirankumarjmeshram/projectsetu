@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isDeepStrictEqual } from "node:util";
 
 import type {
   AreaClassification,
@@ -47,7 +48,12 @@ export async function getProjectsAction() {
     return { success: true, projects: visibleProjects };
   } catch (error) {
     console.error("Failed to fetch projects:", error);
-    return { success: false, error: (error as Error).message, projects: [] };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+      projects: [],
+    };
   }
 }
 
@@ -142,7 +148,12 @@ export async function getProjectAction(projectId: string) {
     };
   } catch (error) {
     console.error(`Failed to load project ${projectId}:`, error);
-    return { success: false, error: (error as Error).message, data: null };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+      data: null,
+    };
   }
 }
 
@@ -283,6 +294,15 @@ export async function saveProjectDraftAction(input: ProjectWizardInput) {
       };
     }
 
+    const currentSnapshot = existing.currentInputSnapshotId
+      ? await snapshotRepo.findById(existing.currentInputSnapshotId)
+      : null;
+    if (
+      currentSnapshot &&
+      isDeepStrictEqual(currentSnapshot.data, JSON.parse(JSON.stringify(input)))
+    ) {
+      return { success: true, revision: existing.revision };
+    }
     const nextRevision = existing.revision + 1;
 
     // Create immutable input snapshot
@@ -325,7 +345,11 @@ export async function saveProjectDraftAction(input: ProjectWizardInput) {
     return { success: true, revision: nextRevision };
   } catch (error) {
     console.error("Failed to save project draft:", error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 

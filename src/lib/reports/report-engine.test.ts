@@ -251,9 +251,8 @@ describe("PDF, DOCX and Excel renderers", () => {
     expect(artifact.content.subarray(0, 5).toString()).toBe("%PDF-");
     expect(artifact.content.length).toBeGreaterThan(10_000);
     expect((source.match(/\/Type \/Page\b/g) ?? []).length).toBeGreaterThan(5);
-    expect(source).toContain(
-      Buffer.from("Projected Profit & Loss").toString("hex"),
-    );
+    expect(source).toContain("/ToUnicode");
+    expect(source).toContain("NotoSans");
   });
 
   it("renders an editable DOCX with headings and financial tables", async () => {

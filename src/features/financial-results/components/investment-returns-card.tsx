@@ -19,6 +19,11 @@ export function InvestmentReturnsCard({ returns }: InvestmentReturnsCardProps) {
 
   return (
     <div className="space-y-6">
+      <p className="text-xs text-slate-600">
+        Indicative pre-tax project returns based on applicant assumptions.
+        Working capital is assumed recovered at the end of the projection; no
+        asset salvage is assumed. Subject to lender appraisal.
+      </p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Project IRR */}
         <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">

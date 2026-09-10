@@ -10,19 +10,14 @@ import {
 import {
   closeTestPool,
   createTestTransaction,
-  isTestDatabaseAvailable,
   type TestTransactionContext,
 } from "./test-db";
 
 describe("PostgreSQL Auth & Ownership Integration Tests", () => {
   let ctx: TestTransactionContext;
-  let isDbUp = false;
 
   beforeEach(async () => {
-    isDbUp = await isTestDatabaseAvailable();
-    if (isDbUp) {
-      ctx = await createTestTransaction();
-    }
+    ctx = await createTestTransaction();
   });
 
   afterEach(async () => {
@@ -36,8 +31,6 @@ describe("PostgreSQL Auth & Ownership Integration Tests", () => {
   });
 
   it("creates, queries, and updates users in PostgreSQL", async () => {
-    if (!isDbUp) return;
-
     const userRepo = new PgUserRepository(ctx.db);
     const pwdHash = await hashPassword("TestPass123!");
 
@@ -65,8 +58,6 @@ describe("PostgreSQL Auth & Ownership Integration Tests", () => {
   });
 
   it("creates, queries, and manages sessions in PostgreSQL", async () => {
-    if (!isDbUp) return;
-
     const userRepo = new PgUserRepository(ctx.db);
     const sessionRepo = new PgSessionRepository(ctx.db);
 
@@ -100,8 +91,6 @@ describe("PostgreSQL Auth & Ownership Integration Tests", () => {
   });
 
   it("enforces tenant project ownership isolation in PostgreSQL", async () => {
-    if (!isDbUp) return;
-
     const userRepo = new PgUserRepository(ctx.db);
     const projectRepo = new PgProjectRepository(ctx.db);
 
@@ -148,8 +137,6 @@ describe("PostgreSQL Auth & Ownership Integration Tests", () => {
   });
 
   it("records and queries administrative audit trail logs", async () => {
-    if (!isDbUp) return;
-
     const userRepo = new PgUserRepository(ctx.db);
     const auditRepo = new PgAdminAuditRepository(ctx.db);
 

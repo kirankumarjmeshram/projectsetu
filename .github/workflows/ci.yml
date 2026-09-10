@@ -66,8 +66,8 @@ jobs:
       - name: Run unit & domain tests (Vitest)
         run: npm test
 
-      - name: Apply database migrations to CI PostgreSQL service
-        run: npm run db:migrate
+      - name: Verify test database lifecycle and failure handling
+        run: npm run test:infra
 
       - name: Run PostgreSQL integration tests
         run: npm run test:db

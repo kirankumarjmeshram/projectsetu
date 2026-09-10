@@ -432,6 +432,7 @@ export function composeCashFlowYearInputs(
       year: profitAndLossYear.year,
       profitAfterTax: profitAndLossYear.profitAfterTax,
       depreciation: profitAndLossYear.depreciation,
+      interestExpenseAddBack: profitAndLossYear.interestExpense,
       changeInNetWorkingCapital:
         workingCapital?.changeInNetWorkingCapital ?? zeroAmount,
       capitalExpenditure: capitalExpenditure?.capitalExpenditure ?? zeroAmount,

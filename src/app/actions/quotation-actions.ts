@@ -127,7 +127,11 @@ export async function createManualQuotationAction(input: {
     };
   } catch (error) {
     console.error("Failed to create manual quotation:", error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -202,7 +206,11 @@ export async function extractQuotationAction(documentId: string) {
       `Failed to extract quotation from document ${documentId}:`,
       error,
     );
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -257,7 +265,11 @@ export async function saveQuotationReviewAction(
     return { success: true, review };
   } catch (error) {
     console.error("Failed to save quotation review:", error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -316,7 +328,11 @@ export async function approveQuotationAction(
     return { success: true, review };
   } catch (error) {
     console.error("Failed to approve quotation:", error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -411,7 +427,8 @@ export async function mapQuotationLinesAction(
     console.error("Failed to map quotation lines to project cost:", error);
     return {
       success: false,
-      error: (error as Error).message,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
       costItems: existingCostItems,
     };
   }
@@ -441,7 +458,12 @@ export async function getQuotationMappingsAction(projectId: string) {
       `Failed to fetch quotation mappings for project ${projectId}:`,
       error,
     );
-    return { success: false, error: (error as Error).message, mappings: [] };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+      mappings: [],
+    };
   }
 }
 
@@ -485,7 +507,11 @@ export async function getQuotationDetailsAction(documentId: string) {
       `Failed to get quotation details for document ${documentId}:`,
       error,
     );
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -539,6 +565,10 @@ export async function compareQuotationsAction(
       `Failed to compare quotations for project ${projectId}:`,
       error,
     );
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }

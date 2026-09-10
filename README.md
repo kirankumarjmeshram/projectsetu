@@ -34,12 +34,13 @@ Supplier quotations are supporting evidence, not automatic project-cost entries.
 
 ## Local setup
 
-Requirements: Node.js 20.9 or later, npm, and PostgreSQL 14 or later.
+Requirements: Node.js 20.9 or later and npm. The commands below provision a
+persistent, UTF-8 local PostgreSQL cluster isolated from automated tests.
 
 ```bash
 npm install
 cp .env.example .env.local
-npm run db:migrate
+npm run db:dev:prepare
 npm run dev
 ```
 
@@ -49,7 +50,19 @@ On Windows PowerShell, copy the environment file with:
 Copy-Item .env.example .env.local
 ```
 
-Configure `DATABASE_URL` and the required authentication/session settings described in [the environment variable catalog](docs/deployment/environment-variables.md). The application does not create a PostgreSQL server; the configured server must already be running. Open `http://localhost:3000`, select **Create Account**, and enter your own project information.
+The example `DATABASE_URL` uses the persistent `projectsetu_dev` database on
+127.0.0.1:5434. `db:dev:prepare` safely starts that owned cluster and applies
+migrations; repeated calls reuse it. Use `npm run db:dev:stop` for bounded clean
+shutdown, or `npm run db:dev:start` and `npm run db:migrate` as separate steps.
+`npm run dev:local` combines preparation and the development server; the database
+remains running until explicitly stopped.
+
+`npm start` remains production-style startup: it never provisions PostgreSQL and
+expects `DATABASE_URL` to identify an already-running, migrated database.
+Automated tests continue to use the separate `projectsetu_test` database on
+127.0.0.1:5433. Configure other development or production PostgreSQL services and
+authentication/session settings as described in [the environment variable catalog](docs/deployment/environment-variables.md).
+Open `http://localhost:3000`, select **Create Account**, and enter your own project information.
 
 Development demo users are disabled by default. They are created only when the explicit development seed setting is enabled; never enable it in a shared or production environment.
 
@@ -65,7 +78,9 @@ npm run test:e2e
 npm run build
 ```
 
-`npm run test:db` and the readiness/E2E checks require an accessible migrated test database. The repository test helper uses PostgreSQL on `127.0.0.1:5433` when started explicitly.
+All test commands now prepare an isolated PostgreSQL database, apply migrations, verify connectivity, and stop the server they started. No manually running database script is needed. Install Chromium once with `npx playwright install chromium`, then use `npm run test:verify` for the full sequence. Individual commands above remain supported.
+
+Use `npm run test:db:prepare` for a standalone preparation check, `npm run test:db:check` to probe an already-running test database, `npm run test:infra` to verify lifecycle behavior, and `npm run test:reports` to generate synthetic DPR QA artifacts. Explicit `TEST_DATABASE_URL` values are restricted to a loopback `projectsetu_test` service (used by CI); production/development `DATABASE_URL` values are never selected by the runner. See [test lifecycle, accounting review and artifact limitations](docs/professional-validation.md).
 
 ## Production and operations
 

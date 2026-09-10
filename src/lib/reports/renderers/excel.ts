@@ -186,7 +186,7 @@ export async function renderExcel(
         footer: 0.2,
       },
     };
-    sheet.headerFooter.oddFooter = `ProjectSetu · ${model.filenameStem} · &P of &N`;
+    sheet.headerFooter.oddFooter = `&CProjectSetu · ${model.filenameStem} · &P of &N`;
   }
   const content = Buffer.from(await workbook.xlsx.writeBuffer());
   return {

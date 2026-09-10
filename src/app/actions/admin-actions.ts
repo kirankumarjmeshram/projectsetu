@@ -50,8 +50,12 @@ export async function adminGetStatsAction() {
         totalRegisteredSchemes: SCHEME_UI_DESCRIPTORS.length,
       },
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -77,8 +81,12 @@ export async function adminListUsersAction() {
     }));
 
     return { success: true, users: safeUsers };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -117,8 +125,12 @@ export async function adminUpdateUserRoleAction(
 
     revalidatePath("/admin");
     return { success: true, user: updated };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -163,8 +175,12 @@ export async function adminToggleUserStatusAction(
 
     revalidatePath("/admin");
     return { success: true, user: updated };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -190,8 +206,12 @@ export async function adminListProjectsAction() {
     }));
 
     return { success: true, projects: enriched };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -240,8 +260,12 @@ export async function adminGetSchemeRegistryAction() {
     });
 
     return { success: true, schemes };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -265,8 +289,12 @@ export async function adminListAuditLogsAction(limit: number = 50) {
     }));
 
     return { success: true, logs: enriched };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -298,7 +326,11 @@ export async function adminGetSystemHealthAction() {
         timestamp: new Date().toISOString(),
       },
     };
-  } catch (error) {
-    return { success: false, error: (error as Error).message };
+  } catch {
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }

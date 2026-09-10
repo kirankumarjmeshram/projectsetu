@@ -288,10 +288,14 @@ function calculateCashFlowYearUnchecked(
   openingCash: MonetaryAmount,
   cumulativeState: CumulativeCashFlowState,
 ): CashFlowYear {
-  const operatingCashFlow = calculateOperatingCashFlowUnchecked(
-    input.profitAfterTax,
-    input.depreciation,
-    input.changeInNetWorkingCapital,
+  const operatingCashFlow = toMonetaryAmount(
+    toDecimal(
+      calculateOperatingCashFlowUnchecked(
+        input.profitAfterTax,
+        input.depreciation,
+        input.changeInNetWorkingCapital,
+      ),
+    ).plus(toDecimal(input.interestExpenseAddBack ?? zeroAmount)),
   );
   const investingCashFlow = calculateInvestingCashFlowUnchecked(
     input.capitalExpenditure,
@@ -329,6 +333,7 @@ function calculateCashFlowYearUnchecked(
     openingCash,
     profitAfterTax: input.profitAfterTax,
     depreciationAddBack: input.depreciation,
+    interestExpenseAddBack: input.interestExpenseAddBack ?? zeroAmount,
     changeInNetWorkingCapital: input.changeInNetWorkingCapital,
     operatingCashFlow,
     capitalExpenditure: input.capitalExpenditure,

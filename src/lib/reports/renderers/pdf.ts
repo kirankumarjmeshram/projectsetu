@@ -1,4 +1,6 @@
 import PDFDocument from "pdfkit";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import type {
   DprReportModel,
@@ -9,13 +11,14 @@ import type {
 const PAGE = { width: 595.28, height: 841.89, margin: 48 };
 
 function pdfText(value: string): string {
-  return value.replaceAll("₹", "Rs. ");
+  return value;
 }
 
 function renderTable(doc: PDFKit.PDFDocument, table: ReportTable): void {
   const pageWidth = doc.page.width - PAGE.margin * 2;
   const width = pageWidth / table.columns.length;
   const drawRow = (values: readonly string[], header = false) => {
+    doc.font(header ? "NotoSans-Bold" : "NotoSans").fontSize(header ? 8 : 7.5);
     const height = Math.max(
       24,
       ...values.map(
@@ -38,7 +41,7 @@ function renderTable(doc: PDFKit.PDFDocument, table: ReportTable): void {
         .restore();
       doc
         .fillColor(header ? "#FFFFFF" : "#172033")
-        .font(header ? "Helvetica-Bold" : "Helvetica")
+        .font(header ? "NotoSans-Bold" : "NotoSans")
         .fontSize(header ? 8 : 7.5)
         .text(pdfText(value), PAGE.margin + index * width + 4, y + 4, {
           width: width - 8,
@@ -49,7 +52,7 @@ function renderTable(doc: PDFKit.PDFDocument, table: ReportTable): void {
     doc.y = y + height;
   };
   doc
-    .font("Helvetica-Bold")
+    .font("NotoSans-Bold")
     .fontSize(11)
     .fillColor("#17365D")
     .text(table.title)
@@ -58,7 +61,7 @@ function renderTable(doc: PDFKit.PDFDocument, table: ReportTable): void {
   table.rows.forEach((row) => drawRow(row.map((cell) => cell.displayValue)));
   for (const note of table.notes ?? [])
     doc
-      .font("Helvetica-Oblique")
+      .font("NotoSans")
       .fontSize(7)
       .fillColor("#475569")
       .text(note, { width: pageWidth });
@@ -81,6 +84,16 @@ export async function renderPdf(
     info: { Title: model.title, Author: "ProjectSetu" },
     compress: false,
   });
+  doc.registerFont(
+    "NotoSans",
+    readFileSync(
+      resolve(process.cwd(), "resources/fonts/NotoSans-Regular.ttf"),
+    ),
+  );
+  doc.registerFont(
+    "NotoSans-Bold",
+    readFileSync(resolve(process.cwd(), "resources/fonts/NotoSans-Bold.ttf")),
+  );
   const chunks: Buffer[] = [];
   doc.on("data", (chunk: Buffer) => chunks.push(chunk));
   const complete = new Promise<Buffer>((resolve, reject) => {
@@ -92,7 +105,7 @@ export async function renderPdf(
   doc.rect(0, 0, 16, PAGE.height).fill("#17365D");
   doc
     .fillColor("#17365D")
-    .font("Helvetica-Bold")
+    .font("NotoSans-Bold")
     .fontSize(28)
     .text("DETAILED PROJECT REPORT", 62, 180, { width: 470 });
   doc
@@ -102,7 +115,7 @@ export async function renderPdf(
     .text(model.project.project.name);
   doc
     .moveDown(1.5)
-    .font("Helvetica")
+    .font("NotoSans")
     .fontSize(11)
     .fillColor("#475569")
     .text(`Prepared for ${model.project.applicant.name}`)
@@ -115,7 +128,7 @@ export async function renderPdf(
 
   doc.addPage();
   doc
-    .font("Helvetica-Bold")
+    .font("NotoSans-Bold")
     .fontSize(20)
     .fillColor("#17365D")
     .text("Table of Contents")
@@ -124,7 +137,7 @@ export async function renderPdf(
     .filter((section) => !["cover", "table-of-contents"].includes(section.id))
     .forEach((section) =>
       doc
-        .font("Helvetica")
+        .font("NotoSans")
         .fontSize(9)
         .fillColor("#172033")
         .text(`${section.order}. ${section.title}`, { continued: false }),
@@ -143,14 +156,14 @@ export async function renderPdf(
     else doc.moveDown(1.5);
     doc.x = PAGE.margin;
     doc
-      .font("Helvetica-Bold")
+      .font("NotoSans-Bold")
       .fontSize(17)
       .fillColor("#17365D")
       .text(`${section.order}. ${section.title}`)
       .moveDown(0.5);
     if (section.narrative)
       doc
-        .font("Helvetica")
+        .font("NotoSans")
         .fontSize(9.5)
         .fillColor("#263548")
         .text(pdfText(section.narrative.text), { align: "justify", lineGap: 2 })
@@ -159,14 +172,14 @@ export async function renderPdf(
   }
   doc.addPage();
   doc
-    .font("Helvetica-Bold")
+    .font("NotoSans-Bold")
     .fontSize(15)
     .fillColor("#17365D")
     .text("Important Disclaimer")
     .moveDown();
   model.disclaimer.forEach((line) =>
     doc
-      .font("Helvetica")
+      .font("NotoSans")
       .fontSize(9)
       .fillColor("#334155")
       .text(`• ${line}`)
@@ -179,7 +192,7 @@ export async function renderPdf(
     const bottomMargin = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
     doc
-      .font("Helvetica")
+      .font("NotoSans")
       .fontSize(7)
       .fillColor("#64748B")
       .text(

@@ -53,6 +53,9 @@ pnpm-debug.log*
 *.dump
 *.sql.gz
 .postgres-test-data/
+.postgres-dev-data/
+.postgres-dev.log
+.test-run.lock
 
 # Deployment and tooling
 /.vercel/

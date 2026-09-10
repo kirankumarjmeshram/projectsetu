@@ -86,7 +86,11 @@ export async function uploadDocumentAction(formData: FormData) {
     };
   } catch (error) {
     console.error("Failed to upload document:", error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -114,7 +118,12 @@ export async function listProjectDocumentsAction(projectId: string) {
     return { success: true, documents: docs };
   } catch (error) {
     console.error(`Failed to list documents for project ${projectId}:`, error);
-    return { success: false, error: (error as Error).message, documents: [] };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+      documents: [],
+    };
   }
 }
 
@@ -159,7 +168,11 @@ export async function getDocumentFileAction(documentId: string) {
     };
   } catch (error) {
     console.error(`Failed to retrieve file for document ${documentId}:`, error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }
 
@@ -188,6 +201,10 @@ export async function archiveDocumentAction(documentId: string) {
     return { success: true, document: updated };
   } catch (error) {
     console.error(`Failed to archive document ${documentId}:`, error);
-    return { success: false, error: (error as Error).message };
+    return {
+      success: false,
+      error:
+        "The operation could not be completed. Check your inputs and try again.",
+    };
   }
 }

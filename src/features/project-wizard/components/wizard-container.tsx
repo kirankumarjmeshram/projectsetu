@@ -59,6 +59,12 @@ export function WizardContainer({
   >("IDLE");
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const updateInput = (next: ProjectWizardInput) => {
+    setInput(next);
+    setCalculationResult(null);
+    setSaveStatus("IDLE");
+  };
+
   const totalCost = sumDecimalStrings(
     input.costItems.map((item) => item.amount),
   );
@@ -228,7 +234,7 @@ export function WizardContainer({
             projectId={projectId || input.project.name}
             existingCostItems={input.costItems}
             onUpdateCostItems={(updatedItems) =>
-              setInput({ ...input, costItems: updatedItems })
+              updateInput({ ...input, costItems: updatedItems })
             }
           />
         </div>
@@ -246,14 +252,14 @@ export function WizardContainer({
             {currentStep === 1 && (
               <Step1ProjectDetails
                 value={input.project}
-                onChange={(project) => setInput({ ...input, project })}
+                onChange={(project) => updateInput({ ...input, project })}
               />
             )}
 
             {currentStep === 2 && (
               <Step2ApplicantPromoter
                 value={input.applicant}
-                onChange={(applicant) => setInput({ ...input, applicant })}
+                onChange={(applicant) => updateInput({ ...input, applicant })}
               />
             )}
 
@@ -261,7 +267,7 @@ export function WizardContainer({
               <Step3ProjectCost
                 projectId={projectId}
                 items={input.costItems}
-                onChange={(costItems) => setInput({ ...input, costItems })}
+                onChange={(costItems) => updateInput({ ...input, costItems })}
               />
             )}
 
@@ -270,7 +276,7 @@ export function WizardContainer({
                 sources={input.financingSources}
                 totalProjectCost={totalCost}
                 onChange={(financingSources) =>
-                  setInput({ ...input, financingSources })
+                  updateInput({ ...input, financingSources })
                 }
               />
             )}
@@ -280,14 +286,14 @@ export function WizardContainer({
                 revenueProducts={input.revenueProducts}
                 operatingExpenses={input.operatingExpenses}
                 onRevenueChange={(revenueProducts) =>
-                  setInput({ ...input, revenueProducts })
+                  updateInput({ ...input, revenueProducts })
                 }
                 onExpenseChange={(operatingExpenses) =>
-                  setInput({ ...input, operatingExpenses })
+                  updateInput({ ...input, operatingExpenses })
                 }
                 dprDetails={input.dprDetails ?? {}}
                 onDprDetailsChange={(dprDetails) =>
-                  setInput({ ...input, dprDetails })
+                  updateInput({ ...input, dprDetails })
                 }
               />
             )}
@@ -296,7 +302,7 @@ export function WizardContainer({
               <Step6WorkingCapital
                 value={input.workingCapital}
                 onChange={(workingCapital) =>
-                  setInput({ ...input, workingCapital })
+                  updateInput({ ...input, workingCapital })
                 }
               />
             )}
@@ -304,7 +310,7 @@ export function WizardContainer({
             {currentStep === 7 && (
               <Step7LoanTerms
                 value={input.loan}
-                onChange={(loan) => setInput({ ...input, loan })}
+                onChange={(loan) => updateInput({ ...input, loan })}
               />
             )}
 
@@ -313,10 +319,10 @@ export function WizardContainer({
                 selectedPrograms={input.selectedPrograms}
                 schemeFacts={input.schemeFacts ?? {}}
                 onProgramChange={(selectedPrograms) =>
-                  setInput({ ...input, selectedPrograms })
+                  updateInput({ ...input, selectedPrograms })
                 }
                 onFactsChange={(schemeFacts) =>
-                  setInput({ ...input, schemeFacts })
+                  updateInput({ ...input, schemeFacts })
                 }
               />
             )}
@@ -326,7 +332,7 @@ export function WizardContainer({
                 input={input}
                 calculationResult={calculationResult}
                 onTaxAndReturnsChange={(taxAndReturns) =>
-                  setInput({ ...input, taxAndReturns })
+                  updateInput({ ...input, taxAndReturns })
                 }
                 onRunCalculation={handleExecuteCalculation}
                 isCalculating={isPending}
