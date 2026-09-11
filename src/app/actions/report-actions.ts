@@ -33,7 +33,11 @@ import {
 import { renderDocx, renderExcel, renderPdf } from "@/lib/reports/renderers";
 import { getReportArtifactStorage } from "@/lib/reports/storage";
 import { selectLatestCurrentCalculationRun } from "@/lib/reports/source-selection";
-import { validateDprReport } from "@/lib/reports/validation";
+import {
+  hasReportIntegrityBlockers,
+  validateDprReport,
+  withValidationNotice,
+} from "@/lib/reports/validation";
 
 async function loadReportSources(
   projectId: string,
@@ -174,6 +178,7 @@ export async function buildReportPreviewAction(projectId: string) {
 export async function generateReportVersionAction(
   projectId: string,
   overrides?: NarrativeOverrides,
+  allowAdvisoryIssues = false,
 ) {
   const user = await getCurrentUser();
   const db = getDb();
@@ -205,24 +210,35 @@ export async function generateReportVersionAction(
     narrativeOverrides: overrides,
   });
   try {
-    const { model, validation } = await loadReportSources(
+    const { model: sourceModel, validation } = await loadReportSources(
       projectId,
       reportId,
       version,
       overrides,
     );
-    if (!validation.validForExport) {
+    if (
+      hasReportIntegrityBlockers(validation) ||
+      (!allowAdvisoryIssues && !validation.validForExport)
+    ) {
       await reportRepo.update(reportId, {
         status: "FAILED",
-        content: model,
-        sections: model.sections,
+        content: sourceModel,
+        sections: sourceModel.sections,
       });
       return {
         success: false as const,
-        error: "Report validation contains blocking issues.",
+        error: hasReportIntegrityBlockers(validation)
+          ? "Report generation is blocked by a technical or accounting integrity failure."
+          : "Review the project validation issues or choose Download Anyway.",
         validation,
       };
     }
+    const unresolved = validation.issues.filter(
+      (issue) => issue.severity !== "INFORMATION",
+    );
+    const model = allowAdvisoryIssues
+      ? withValidationNotice(sourceModel, unresolved)
+      : sourceModel;
     const artifacts = await Promise.all([
       renderPdf(model),
       renderDocx(model),

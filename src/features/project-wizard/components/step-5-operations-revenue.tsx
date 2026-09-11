@@ -1,4 +1,5 @@
 import React from "react";
+import { FieldHelp } from "../field-help";
 
 import { generateId } from "@/lib/persistence/id";
 import type {
@@ -132,9 +133,13 @@ export function Step5OperationsRevenue({
               <tr className="border-b border-slate-200 bg-slate-50 font-semibold text-slate-700">
                 <th className="px-3 py-3">Product Name</th>
                 <th className="w-20 px-3 py-3">Unit</th>
-                <th className="px-3 py-3 text-right">Capacity (Y1)</th>
+                <th className="px-3 py-3 text-right">
+                  Capacity (Y1) <FieldHelp topic="projectCapacity" />
+                </th>
                 <th className="px-3 py-3 text-right">Unit Price (₹)</th>
-                <th className="px-3 py-3 text-right">Utilisation %</th>
+                <th className="px-3 py-3 text-right">
+                  Utilisation % <FieldHelp topic="capacityUtilisation" />
+                </th>
                 <th className="px-3 py-3 text-right">Growth %</th>
                 <th className="px-3 py-3 text-right">Price Esc. %</th>
                 <th className="w-12 px-3 py-3 text-center"></th>

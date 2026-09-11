@@ -36,6 +36,12 @@ export default async function HomePage() {
 
           <div className="flex items-center gap-4">
             <Link
+              href="/guide"
+              className="text-xs font-semibold text-slate-600 hover:text-emerald-700"
+            >
+              User Guide
+            </Link>
+            <Link
               href="/"
               className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800"
             >

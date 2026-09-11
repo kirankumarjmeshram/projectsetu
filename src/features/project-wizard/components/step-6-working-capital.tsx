@@ -1,6 +1,7 @@
 import React from "react";
 
 import type { WorkingCapitalInput } from "@/lib/application/orchestrator/orchestrator-types";
+import { FieldHelp } from "../field-help";
 
 interface Step6WorkingCapitalProps {
   value: WorkingCapitalInput;
@@ -16,6 +17,7 @@ export function Step6WorkingCapital({
       <div>
         <h3 className="text-lg font-bold text-slate-900">
           Step 6: Working Capital Assessment
+          <FieldHelp topic="workingCapital" />
         </h3>
         <p className="mt-1 text-xs text-slate-500">
           Specify inventory holding periods, receivable/debtor cycles, supplier

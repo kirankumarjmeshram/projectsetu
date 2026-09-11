@@ -69,11 +69,13 @@ export function textCell(
 export function sanitizeReportFilename(
   projectName: string,
   version: number,
+  generatedAt?: string,
 ): string {
   const safe = projectName
     .normalize("NFKD")
     .replace(/[^a-zA-Z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
     .slice(0, 60);
-  return `ProjectSetu_${safe || "Project"}_DPR_v${version}`;
+  const date = generatedAt?.slice(0, 10);
+  return `ProjectSetu_${safe || "Project"}_DPR${date ? `_${date}` : ""}_v${version}`;
 }

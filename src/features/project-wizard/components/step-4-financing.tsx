@@ -1,4 +1,5 @@
 import React from "react";
+import { FieldHelp } from "../field-help";
 
 import { generateId } from "@/lib/persistence/id";
 import type { FinanceSourceInput } from "@/lib/application/orchestrator/orchestrator-types";
@@ -69,7 +70,7 @@ export function Step4Financing({
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h3 className="text-lg font-bold text-slate-900">
-            Step 4: Means of Finance
+            Step 4: Means of Finance <FieldHelp topic="promoterContribution" />
           </h3>
           <p className="mt-1 text-xs text-slate-500">
             Specify the capital structure: promoter equity, bank term loan, and

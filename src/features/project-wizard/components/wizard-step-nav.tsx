@@ -23,12 +23,14 @@ interface WizardStepNavProps {
   currentStep: number;
   onSelectStep: (stepNumber: number) => void;
   maxReachedStep: number;
+  issueCounts?: Readonly<Record<number, number>>;
 }
 
 export function WizardStepNav({
   currentStep,
   onSelectStep,
   maxReachedStep,
+  issueCounts = {},
 }: WizardStepNavProps) {
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xs">
@@ -67,6 +69,7 @@ export function WizardStepNav({
               </div>
               <span className="w-full truncate text-[11px] leading-tight">
                 {step.shortTitle}
+                {!!issueCounts[step.number] && ` (${issueCounts[step.number]})`}
               </span>
             </button>
           );

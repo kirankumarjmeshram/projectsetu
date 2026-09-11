@@ -15,12 +15,15 @@ import { LoanScheduleTable } from "@/features/financial-results/components/loan-
 import { ProfitAndLossTable } from "@/features/financial-results/components/profit-and-loss-table";
 import { RevenueProjectionTable } from "@/features/financial-results/components/revenue-projection-table";
 import { ReportGenerationPanel } from "@/features/reports/components/report-generation-panel";
+import type { ReportValidationIssue } from "@/lib/reports/contracts";
 
 interface Step10ResultsProps {
   projectId: string;
   result: ProjectCalculationResult | null;
   onRecalculate: () => void;
   isCalculating: boolean;
+  onNavigateToStep: (step: number) => void;
+  onValidationIssues: (issues: readonly ReportValidationIssue[]) => void;
 }
 
 type StatementTab =
@@ -41,13 +44,19 @@ export function Step10Results({
   result,
   onRecalculate,
   isCalculating,
+  onNavigateToStep,
+  onValidationIssues,
 }: Step10ResultsProps) {
   const [activeTab, setActiveTab] = useState<StatementTab>("SUMMARY");
 
   if (!result) {
     return (
       <div className="space-y-6">
-        <ReportGenerationPanel projectId={projectId} />
+        <ReportGenerationPanel
+          projectId={projectId}
+          onNavigateToStep={onNavigateToStep}
+          onIssuesChange={onValidationIssues}
+        />
         <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-12 text-center">
           <div className="text-3xl">📊</div>
           <h3 className="text-base font-bold text-slate-900">
@@ -95,7 +104,11 @@ export function Step10Results({
 
   return (
     <div className="space-y-6">
-      <ReportGenerationPanel projectId={projectId} />
+      <ReportGenerationPanel
+        projectId={projectId}
+        onNavigateToStep={onNavigateToStep}
+        onIssuesChange={onValidationIssues}
+      />
       {/* Top Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>

@@ -831,6 +831,7 @@ export async function buildDprReportModel(
     filenameStem: sanitizeReportFilename(
       p.project.name,
       input.identity.reportVersion,
+      input.identity.generatedAt,
     ),
     project: p,
     calculation: c,

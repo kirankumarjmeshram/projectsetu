@@ -1,4 +1,5 @@
 import React from "react";
+import { FieldHelp } from "@/features/project-wizard/field-help";
 
 import type { BankabilityMetricsSchedule } from "@/domain/metrics/metrics";
 import { formatPercentage, formatRatio } from "@/lib/application/formatters";
@@ -84,6 +85,7 @@ export function BankabilityMetricsTable({
             <tr className="bg-indigo-50/20 font-semibold text-slate-900 hover:bg-slate-50/40">
               <td className="px-4 py-2.5 text-indigo-950">
                 Debt Service Coverage Ratio (DSCR)
+                <FieldHelp topic="dscr" />
               </td>
               {years.map((y) => (
                 <td
@@ -152,6 +154,7 @@ export function BankabilityMetricsTable({
             <tr className="hover:bg-slate-50/40">
               <td className="px-4 py-2.5 text-slate-700">
                 Break-Even Point (% of Capacity)
+                <FieldHelp topic="breakEven" />
               </td>
               {years.map((y) => (
                 <td

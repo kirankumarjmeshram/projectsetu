@@ -1,0 +1,146 @@
+{
+  "project": {
+    "id": "mock-kolhapur-spice",
+    "name": "Sahyadri Spice Works (Fictional Sample)",
+    "mode": "BANKABLE",
+    "industryActivity": "Spice grinding and packing",
+    "stage": "PLANNING",
+    "status": "DRAFT",
+    "areaClassification": "RURAL",
+    "address": {
+      "lines": ["Sample industrial shed"],
+      "villageTownCity": "Kolhapur",
+      "district": "Kolhapur",
+      "state": "Maharashtra",
+      "pinCode": "416001"
+    },
+    "projectionPeriodYears": 5,
+    "projectDescription": "Fictional training sample using applicant-style assumptions."
+  },
+  "applicant": {
+    "applicantType": "INDIVIDUAL",
+    "name": "Sample Promoter Meera Patil",
+    "gender": "FEMALE",
+    "age": 34,
+    "socialCategory": "GENERAL",
+    "educationQualification": "Graduate",
+    "enterpriseStatus": "NEW",
+    "experienceYears": 4,
+    "priorSubsidyClaimed": false,
+    "edpTrainingCompleted": false
+  },
+  "costItems": [
+    {
+      "id": "grinder",
+      "description": "Spice grinder and packing line",
+      "category": "PLANT_AND_MACHINERY",
+      "amount": "700000"
+    },
+    {
+      "id": "equipment",
+      "description": "Weighing and sealing equipment",
+      "category": "EQUIPMENT",
+      "amount": "100000"
+    },
+    {
+      "id": "wc",
+      "description": "Working-capital margin",
+      "category": "MARGIN_FOR_WORKING_CAPITAL",
+      "amount": "200000"
+    }
+  ],
+  "financingSources": [
+    {
+      "id": "equity",
+      "type": "PROMOTER_CONTRIBUTION",
+      "name": "Promoter contribution",
+      "amount": "400000"
+    },
+    {
+      "id": "loan-source",
+      "type": "TERM_LOAN",
+      "name": "Proposed term loan subject to appraisal",
+      "amount": "600000"
+    }
+  ],
+  "revenueProducts": [
+    {
+      "id": "spice-packs",
+      "name": "Ground spice packs",
+      "unit": "packs",
+      "quantityYear1": "50000",
+      "unitPriceYear1": "40",
+      "capacityUtilisationYear1": "55",
+      "annualQuantityGrowth": "6",
+      "annualPriceEscalation": "3"
+    }
+  ],
+  "operatingExpenses": [
+    {
+      "id": "materials",
+      "name": "Whole spices and packaging",
+      "category": "RAW_MATERIALS",
+      "calculationMethod": "PERCENTAGE_OF_REVENUE",
+      "costBehavior": "VARIABLE",
+      "percentageOfRevenueYear1": "45",
+      "annualEscalation": "0"
+    },
+    {
+      "id": "wages",
+      "name": "Production wages",
+      "category": "WAGES",
+      "calculationMethod": "FIXED_ANNUAL_AMOUNT",
+      "costBehavior": "FIXED",
+      "annualAmountYear1": "300000",
+      "annualEscalation": "5"
+    }
+  ],
+  "workingCapital": {
+    "dayBase": "360",
+    "rawMaterialDays": "30",
+    "finishedGoodsDays": "15",
+    "receivableDays": "21",
+    "creditorDays": "15",
+    "borrowerMarginPercentage": "25"
+  },
+  "loan": {
+    "id": "loan",
+    "loanType": "TERM_LOAN",
+    "principalAmount": "600000",
+    "annualInterestRate": "10",
+    "repaymentFrequency": "YEARLY",
+    "repaymentMethod": "EQUAL_PRINCIPAL",
+    "repaymentTenureYears": 5,
+    "moratoriumPeriods": 0
+  },
+  "depreciableAssets": [
+    {
+      "id": "assets",
+      "name": "Grinding and packing equipment",
+      "category": "PLANT_AND_MACHINERY",
+      "method": "STRAIGHT_LINE",
+      "originalCost": "800000",
+      "residualValue": "0",
+      "usefulLifeYears": 10
+    }
+  ],
+  "taxAndReturns": {
+    "taxMode": "PERCENTAGE_OF_POSITIVE_PBT",
+    "taxRate": "25",
+    "discountRate": "12",
+    "initialOpeningCash": "0"
+  },
+  "selectedPrograms": [],
+  "schemeFacts": {},
+  "dprDetails": {
+    "businessObjective": "Fictional sample: grind and pack spices for local retail.",
+    "productServiceDescription": "Fictional sample products; specifications require applicant confirmation.",
+    "targetMarket": "",
+    "operatingProcess": "Applicant assumption: clean, grind, test, pack and dispatch.",
+    "infrastructureUtilities": "Applicant assumption: leased shed with power.",
+    "manpowerPlan": "Applicant assumption: three production workers.",
+    "implementationPlan": "Applicant assumption: installation and trials within three months.",
+    "risks": "",
+    "riskMitigation": ""
+  }
+}

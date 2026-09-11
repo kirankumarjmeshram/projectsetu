@@ -21,6 +21,8 @@ import { Step8Schemes } from "./step-8-schemes";
 import { Step9ReviewValidate } from "./step-9-review-validate";
 import { Step10Results } from "./step-10-results";
 import { WizardStepNav } from "./wizard-step-nav";
+import { countIssuesByStep } from "@/lib/validation/wizard-issues";
+import type { ReportValidationIssue } from "@/lib/reports/contracts";
 
 interface WizardContainerProps {
   projectId?: string;
@@ -53,6 +55,9 @@ export function WizardContainer({
   );
   const [calculationResult, setCalculationResult] =
     useState<ProjectCalculationResult | null>(initialCalculationResult);
+  const [reportIssues, setReportIssues] = useState<
+    readonly ReportValidationIssue[]
+  >([]);
   const [isPending, startTransition] = useTransition();
   const [saveStatus, setSaveStatus] = useState<
     "SAVED" | "SAVING" | "ERROR" | "IDLE"
@@ -173,6 +178,12 @@ export function WizardContainer({
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            href="/guide"
+            className="text-xs font-semibold text-slate-600 hover:text-emerald-700"
+          >
+            User Guide
+          </Link>
           {saveStatus === "SAVING" && (
             <span className="text-xs text-slate-400">Saving draft...</span>
           )}
@@ -245,6 +256,10 @@ export function WizardContainer({
             currentStep={currentStep}
             onSelectStep={handleStepChange}
             maxReachedStep={maxReachedStep}
+            issueCounts={countIssuesByStep([
+              ...(calculationResult?.issues ?? []),
+              ...reportIssues,
+            ])}
           />
 
           {/* Main Step Container */}
@@ -345,6 +360,11 @@ export function WizardContainer({
                 result={calculationResult}
                 onRecalculate={handleExecuteCalculation}
                 isCalculating={isPending}
+                onNavigateToStep={(step) => {
+                  setCurrentStep(step);
+                  setMaxReachedStep((current) => Math.max(current, step));
+                }}
+                onValidationIssues={setReportIssues}
               />
             )}
           </div>

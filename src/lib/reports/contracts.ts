@@ -105,6 +105,7 @@ export interface ReportValidationIssue {
   readonly severity: ReportValidationSeverity;
   readonly message: string;
   readonly sectionId?: string;
+  readonly overrideable?: boolean;
 }
 
 export interface ReportValidationResult {

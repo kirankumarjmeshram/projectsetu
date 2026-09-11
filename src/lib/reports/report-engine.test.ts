@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { programId } from "@/domain/schemes/program";
 import { orchestrateProjectCalculation } from "@/lib/application/orchestrator/calculation-orchestrator";
 import { createDefaultProjectWizardInput } from "@/lib/application/orchestrator/orchestrator-defaults";
+import { professionalFixture } from "@/lib/application/orchestrator/testing/professional-fixture";
 
 import { buildDprReportModel } from "./builder";
 import type { BuildDprReportInput } from "./contracts";
@@ -22,7 +23,11 @@ import {
   renderPdf,
   REQUIRED_EXCEL_SHEETS,
 } from "./renderers";
-import { validateDprReport } from "./validation";
+import {
+  hasReportIntegrityBlockers,
+  validateDprReport,
+  withValidationNotice,
+} from "./validation";
 
 function sourceInput(
   overrides?: Parameters<typeof createDefaultProjectWizardInput>[0],
@@ -203,6 +208,55 @@ describe("DPR report content model", () => {
 });
 
 describe("narrative and report validation", () => {
+  it("allows advisory completeness issues while integrity failures remain blocking", async () => {
+    const project = professionalFixture();
+    const incomplete = {
+      ...project,
+      dprDetails: { ...project.dprDetails, targetMarket: "", risks: "" },
+    };
+    const base = sourceInput();
+    const model = await buildDprReportModel({
+      ...base,
+      identity: { ...base.identity, projectId: incomplete.project.id },
+      project: incomplete,
+      calculation: orchestrateProjectCalculation(incomplete, "2026-04-01"),
+    });
+    const advisory = validateDprReport(model);
+    expect(advisory.issues.map((issue) => issue.code)).toEqual(
+      expect.arrayContaining([
+        "MISSING_MARKET_INFORMATION",
+        "MISSING_RISK_INFORMATION",
+      ]),
+    );
+    expect(hasReportIntegrityBlockers(advisory)).toBe(false);
+    const broken = validateDprReport({
+      ...model,
+      calculation: { ...model.calculation, success: false },
+    });
+    expect(hasReportIntegrityBlockers(broken)).toBe(true);
+  });
+
+  it("renders unresolved advisory issues into a PDF notice", async () => {
+    const model = await buildDprReportModel(sourceInput());
+    const warned = withValidationNotice(model, [
+      {
+        code: "MISSING_MARKET_INFORMATION",
+        severity: "WARNING",
+        message: "Applicant market information is missing.",
+        sectionId: "market-sales",
+        overrideable: true,
+      },
+    ]);
+    expect(warned.sections[2].title).toBe(
+      "Validation / Data Completeness Notice",
+    );
+    const pdf = await renderPdf(warned);
+    expect(pdf.mimeType).toBe("application/pdf");
+    expect(pdf.filename).toMatch(
+      /^ProjectSetu_.*_DPR_\d{4}-\d{2}-\d{2}_v1\.pdf$/,
+    );
+    expect(pdf.content.length).toBeGreaterThan(10_000);
+  });
   it("falls back when optional AI is unavailable, malformed, or invents a number", async () => {
     const fallback = new DeterministicNarrativeProvider();
     for (const external of [

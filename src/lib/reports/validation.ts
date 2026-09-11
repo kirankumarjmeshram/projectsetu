@@ -79,6 +79,23 @@ export function validateDprReport(
       severity: "WARNING",
       message: "Promoter or applicant name has not been provided.",
       sectionId: "applicant-profile",
+      overrideable: true,
+    });
+  if (!model.project.dprDetails?.targetMarket?.trim())
+    issues.push({
+      code: "MISSING_MARKET_INFORMATION",
+      severity: "WARNING",
+      message: "Applicant-supplied target-market information is missing.",
+      sectionId: "market-sales",
+      overrideable: true,
+    });
+  if (!model.project.dprDetails?.risks?.trim())
+    issues.push({
+      code: "MISSING_RISK_INFORMATION",
+      severity: "WARNING",
+      message: "Project risks have not been described.",
+      sectionId: "risks-mitigation",
+      overrideable: true,
     });
   if (
     model.calculation.projectId !== model.identity.projectId ||
@@ -167,5 +184,59 @@ export function validateDprReport(
   return {
     validForExport: !issues.some((issue) => issue.severity === "BLOCKING"),
     issues,
+  };
+}
+
+export function hasReportIntegrityBlockers(
+  result: ReportValidationResult,
+): boolean {
+  return result.issues.some(
+    (issue) => issue.severity === "BLOCKING" && issue.overrideable !== true,
+  );
+}
+
+export function withValidationNotice(
+  model: DprReportModel,
+  issues: readonly ReportValidationIssue[],
+): DprReportModel {
+  if (!issues.length) return model;
+  const notice = {
+    id: "validation-data-completeness",
+    title: "Validation / Data Completeness Notice",
+    order: 3,
+    narrative: {
+      text: "This report was generated with unresolved business, eligibility or data-completeness issues. These items are applicant-supplied or unverified and require review before bank or authority submission.",
+      provenance: "DETERMINISTIC" as const,
+      approved: true,
+    },
+    tables: [
+      {
+        id: "validation-issues",
+        title: "Items requiring review",
+        columns: ["Section", "Classification", "Issue"],
+        rows: issues.map((issue) => [
+          {
+            kind: "TEXT" as const,
+            displayValue: issue.sectionId ?? "Report / Calculation",
+          },
+          {
+            kind: "STATUS" as const,
+            displayValue: issue.severity.replaceAll("_", " "),
+          },
+          { kind: "TEXT" as const, displayValue: issue.message },
+        ]),
+      },
+    ],
+  };
+  return {
+    ...model,
+    sections: [
+      ...model.sections.slice(0, 2),
+      notice,
+      ...model.sections.slice(2).map((section) => ({
+        ...section,
+        order: section.order + 1,
+      })),
+    ],
   };
 }

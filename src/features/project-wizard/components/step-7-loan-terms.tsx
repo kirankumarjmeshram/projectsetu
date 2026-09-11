@@ -1,6 +1,7 @@
 import React from "react";
 
 import type { LoanAssumptionsInput } from "@/lib/application/orchestrator/orchestrator-types";
+import { FieldHelp } from "../field-help";
 
 interface Step7LoanTermsProps {
   value: LoanAssumptionsInput;
@@ -35,6 +36,7 @@ export function Step7LoanTerms({ value, onChange }: Step7LoanTermsProps) {
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-700">
             Loan Facility Type *
+            <FieldHelp topic="termLoan" />
           </label>
           <select
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
@@ -77,6 +79,7 @@ export function Step7LoanTerms({ value, onChange }: Step7LoanTermsProps) {
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-700">
             Annual Interest Rate (%) *
+            <FieldHelp topic="interestRate" />
           </label>
           <input
             type="text"
@@ -162,6 +165,7 @@ export function Step7LoanTerms({ value, onChange }: Step7LoanTermsProps) {
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-700">
             Moratorium / Grace Periods (Periods Count)
+            <FieldHelp topic="moratorium" />
           </label>
           <input
             type="number"

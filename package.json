@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "diff-check": "git diff --check",
     "test": "tsx scripts/run-tests.ts unit",
     "test:watch": "tsx scripts/run-tests.ts watch",
     "test:db": "tsx scripts/run-tests.ts db",
